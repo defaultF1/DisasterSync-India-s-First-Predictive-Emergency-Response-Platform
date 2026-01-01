@@ -1,18 +1,11 @@
 {
-    "version": 2,
-    "public": false,
-    "cleanUrls": true,
+    "buildCommand": "cd client && npm install && npm run build",
+    "outputDirectory": "client/dist",
+    "framework": "vite",
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/client/$1"
-        }
-    ],
-    "redirects": [
-        {
-            "source": "/",
-            "destination": "/client/",
-            "permanent": true
+            "destination": "/index.html"
         }
     ]
 }
