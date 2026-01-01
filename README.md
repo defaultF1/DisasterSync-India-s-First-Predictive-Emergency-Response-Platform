@@ -101,7 +101,7 @@ Simply double-click `run_app.bat` on Windows. It will:
 ```bash
 # Clone the repository
 git clone https://github.com/defaultF1/DisasterSync-India-s-First-Predictive-Emergency-Response-Platform.git
-cd disastersync
+cd DisasterSync-India-s-First-Predictive-Emergency-Response-Platform
 
 # Install backend dependencies
 cd server
