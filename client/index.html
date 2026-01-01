@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DisasterSync | Command Center</title>
+  <!-- Google Fonts for Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script>
+    window.onerror = function (msg, url, line, col, error) {
+      var div = document.createElement('div');
+      div.style.cssText = 'position:fixed; top:0; left:0; right:0; background:rgba(255,0,0,0.9); color:white; padding:20px; z-index:99999; font-family:monospace; white-space:pre-wrap; font-size:16px;';
+      div.innerHTML = '🛑 <b>CRITICAL ERROR:</b><br>' + msg + '<br><br>Source: ' + url + ':' + line + ':' + col + '<br><br>' + (error && error.stack ? error.stack : '');
+      document.body.appendChild(div);
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function (event) {
+      var div = document.createElement('div');
+      div.style.cssText = 'position:fixed; top:50%; left:0; right:0; background:rgba(255,100,0,0.9); color:white; padding:20px; z-index:99999; font-family:monospace; white-space:pre-wrap; font-size:16px;';
+      div.innerHTML = '⚠️ <b>UNHANDLED PROMISE:</b><br>' + event.reason;
+      document.body.appendChild(div);
+    });
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>
