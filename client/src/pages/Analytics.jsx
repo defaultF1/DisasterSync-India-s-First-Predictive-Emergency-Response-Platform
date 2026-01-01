@@ -5,8 +5,10 @@ import { TrendingUp, Target, Clock, Users, Award, Activity } from 'lucide-react'
 const Analytics = () => {
     const [analytics, setAnalytics] = useState(null);
 
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
     useEffect(() => {
-        fetch('http://localhost:3000/api/analytics')
+        fetch(`${backendUrl}/api/analytics`)
             .then(res => res.json())
             .then(data => setAnalytics(data))
             .catch(err => console.error('Failed to fetch analytics', err));

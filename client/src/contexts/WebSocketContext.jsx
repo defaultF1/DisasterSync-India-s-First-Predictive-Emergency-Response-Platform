@@ -70,7 +70,8 @@ export const WebSocketProvider = ({ children }) => {
     ]);
 
     useEffect(() => {
-        const newSocket = io('http://localhost:3000');
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const newSocket = io(backendUrl);
 
         newSocket.on('connect', () => {
             console.log('✅ WebSocket connected');

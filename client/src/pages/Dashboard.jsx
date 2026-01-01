@@ -12,9 +12,11 @@ const Dashboard = () => {
 
     const prediction = predictions && predictions.length > 0 ? predictions[0] : null;
 
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
     useEffect(() => {
         // Fetch live feed
-        fetch('http://localhost:3000/api/feed')
+        fetch(`${backendUrl}/api/feed`)
             .then(res => res.json())
             .then(data => setLiveFeed(data))
             .catch(err => console.error('Failed to fetch feed', err));
@@ -25,8 +27,9 @@ const Dashboard = () => {
 
         setActiveAlert(true);
 
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         try {
-            const res = await fetch('http://localhost:3000/api/alerts', {
+            const res = await fetch(`${backendUrl}/api/alerts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
