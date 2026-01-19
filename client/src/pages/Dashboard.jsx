@@ -4,6 +4,7 @@ import MapComponent from '../components/MapComponent';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
+import { API_URL } from '../utils/apiConfig';
 
 const Dashboard = () => {
     const { predictions, resources, isConnected } = useWebSocket();
@@ -12,11 +13,9 @@ const Dashboard = () => {
 
     const prediction = predictions && predictions.length > 0 ? predictions[0] : null;
 
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
     useEffect(() => {
         // Fetch live feed
-        fetch(`${backendUrl}/api/feed`)
+        fetch(`${API_URL}/api/feed`)
             .then(res => res.json())
             .then(data => setLiveFeed(data))
             .catch(err => console.error('Failed to fetch feed', err));
@@ -27,9 +26,8 @@ const Dashboard = () => {
 
         setActiveAlert(true);
 
-        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         try {
-            const res = await fetch(`${backendUrl}/api/alerts`, {
+            const res = await fetch(`${API_URL}/api/alerts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

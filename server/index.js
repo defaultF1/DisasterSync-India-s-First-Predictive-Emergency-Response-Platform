@@ -8,14 +8,24 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: process.env.FRONTEND_URL || '*',
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Production-ready CORS configuration
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000']
+  : '*';
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json());
 
 // --- Enhanced Mock Data ---

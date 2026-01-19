@@ -2,16 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Target, Clock, Users, Award, Activity } from 'lucide-react';
 
-const Analytics = () => {
-    const [analytics, setAnalytics] = useState(null);
+import { API_URL } from '../utils/apiConfig';
+import axios from 'axios'; // Assuming axios is available or needs to be imported
 
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const Analytics = () => {
+    const [data, setData] = useState(null);
 
     useEffect(() => {
-        fetch(`${backendUrl}/api/analytics`)
-            .then(res => res.json())
-            .then(data => setAnalytics(data))
-            .catch(err => console.error('Failed to fetch analytics', err));
+        // Fetch analytics data
+        const fetchData = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/api/analytics`);
+                setData(response.data);
+            } catch (err) {
+                console.error('Failed to fetch analytics', err);
+            }
+        };
+        fetchData();
     }, []);
 
     const predictionTrendData = [
@@ -61,7 +68,7 @@ const Analytics = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                         <div>
                             <div className="metric-label">Accuracy Rate</div>
-                            <div className="metric-value">{analytics?.accuracyRate || 89.5}%</div>
+                            <div className="metric-value">{data?.accuracyRate || 89.5}%</div>
                             <div className="metric-change positive">↑ 5.2% from last month</div>
                         </div>
                         <Target size={32} style={{ color: 'var(--accent-primary)', opacity: 0.3 }} />
@@ -72,7 +79,7 @@ const Analytics = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                         <div>
                             <div className="metric-label">Avg Response Time</div>
-                            <div className="metric-value">{analytics?.avgResponseTime || '18 min'}</div>
+                            <div className="metric-value">{data?.avgResponseTime || '18 min'}</div>
                             <div className="metric-change positive">↓ 3 min improvement</div>
                         </div>
                         <Clock size={32} style={{ color: 'var(--accent-success)', opacity: 0.3 }} />
@@ -83,7 +90,7 @@ const Analytics = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                         <div>
                             <div className="metric-label">Lives Protected</div>
-                            <div className="metric-value">{(analytics?.livesImpacted || 125000).toLocaleString()}</div>
+                            <div className="metric-value">{(data?.livesImpacted || 125000).toLocaleString()}</div>
                             <div className="metric-change positive">↑ 12,000 this quarter</div>
                         </div>
                         <Users size={32} style={{ color: 'var(--accent-warning)', opacity: 0.3 }} />
@@ -156,13 +163,13 @@ const Analytics = () => {
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}% `}
                                 outerRadius={100}
                                 fill="#8884d8"
                                 dataKey="value"
                             >
                                 {disasterTypeData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                    <Cell key={`cell - ${index} `} fill={entry.color} />
                                 ))}
                             </Pie>
                             <Tooltip
@@ -236,7 +243,7 @@ const Analytics = () => {
                 }}>
                     <div style={{ textAlign: 'center' }}>
                         <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--accent-primary)' }}>
-                            {analytics?.predictionsLast30Days || 47}
+                            {data?.predictionsLast30Days || 47}
                         </div>
                         <div style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                             Predictions (30 days)
@@ -244,7 +251,7 @@ const Analytics = () => {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                         <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--accent-success)' }}>
-                            {analytics?.successfulEvacuations || 42}
+                            {data?.successfulEvacuations || 42}
                         </div>
                         <div style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                             Successful Evacuations
@@ -252,7 +259,7 @@ const Analytics = () => {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                         <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--accent-warning)' }}>
-                            {analytics?.resourcesDeployed || 234}
+                            {data?.resourcesDeployed || 234}
                         </div>
                         <div style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                             Resources Deployed
@@ -260,7 +267,7 @@ const Analytics = () => {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                         <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--accent-secondary)' }}>
-                            {analytics?.agenciesCoordinated || 17}
+                            {data?.agenciesCoordinated || 17}
                         </div>
                         <div style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                             Agencies Coordinated

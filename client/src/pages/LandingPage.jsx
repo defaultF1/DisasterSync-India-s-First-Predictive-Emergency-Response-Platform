@@ -9,17 +9,18 @@ const LandingPage = () => {
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
             {/* Navigation */}
-            <nav style={{ padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'fixed', width: '100%', top: 0, zIndex: 100, backdropFilter: 'blur(10px)', borderBottom: 'var(--glass-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold', fontSize: '1.5rem', fontFamily: 'var(--font-heading)' }}>
-                    <Activity color="var(--accent-primary)" size={28} />
+            <nav style={{ padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'fixed', width: '100%', top: 0, zIndex: 100, backdropFilter: 'blur(10px)', borderBottom: 'var(--glass-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold', fontSize: '1.25rem', fontFamily: 'var(--font-heading)' }}>
+                    <Activity color="var(--accent-primary)" size={24} />
                     DisasterSync
                 </div>
-                <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', fontSize: '0.95rem' }}>
                     <a href="#about" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s' }}>About</a>
                     <a href="#features" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s' }}>Features</a>
                     <a href="#impact" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s' }}>Impact</a>
                     <button
                         className="btn btn-primary"
+                        style={{ padding: '8px 20px', fontSize: '0.9rem' }}
                         onClick={() => navigate('/login')}
                     >
                         Government Login
@@ -80,14 +81,9 @@ const LandingPage = () => {
                 <div style={{
                     padding: '0 2rem',
                     maxWidth: '1200px',
-                    margin: '0 auto',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '2rem'
+                    margin: '0 auto'
                 }}>
-                    <div style={{ textAlign: 'center', marginBottom: '3rem', maxWidth: '800px', margin: '0 auto 3rem auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '3rem', maxWidth: '900px', margin: '0 auto 4rem auto' }}>
                         <p style={{
                             fontSize: '1.2rem',
                             lineHeight: '1.8',
@@ -97,29 +93,38 @@ const LandingPage = () => {
                             Current disaster management in India is reactive, fragmented, and deadly. By the time agencies coordinate, by the time alerts go out, by the time resources arrive—it's often too late. DisasterSync transforms this entirely. Our AI analyzes weather patterns, seismic data, and satellite imagery to predict disasters 2 hours ahead. Our platform coordinates 17+ agencies in real-time. Our multi-channel alert system reaches 98.5% of affected citizens via SMS, even offline. Since deployment, we've achieved zero casualties in 23 predicted major disasters, evacuated 47,392 people safely, and cut average response time from 45 minutes to 8 minutes. When seconds mean lives, DisasterSync delivers.
                         </p>
                     </div>
-                    <div style={{ textAlign: 'center', flex: 1 }}>
-                        <div className="stat-number">2 Hrs</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Advance Prediction</div>
-                    </div>
-                    <div style={{ width: '1px', height: '60px', background: 'rgba(255,255,255,0.1)' }} className="hidden-mobile"></div>
-                    <div style={{ textAlign: 'center', flex: 1 }}>
-                        <div className="stat-number">50M+</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Lives Covered</div>
-                    </div>
-                    <div style={{ width: '1px', height: '60px', background: 'rgba(255,255,255,0.1)' }} className="hidden-mobile"></div>
-                    <div style={{ textAlign: 'center', flex: 1 }}>
-                        <div className="stat-number">100%</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Offline Reach (SMS/Voice)</div>
-                    </div>
-                    <div style={{ width: '1px', height: '60px', background: 'rgba(255,255,255,0.1)' }} className="hidden-mobile"></div>
-                    <div style={{ textAlign: 'center', flex: 1 }}>
-                        <div className="stat-number">17+</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Agencies Unified</div>
-                    </div>
-                    <div style={{ width: '1px', height: '60px', background: 'rgba(255,255,255,0.1)' }} className="hidden-mobile"></div>
-                    <div style={{ textAlign: 'center', flex: 1 }}>
-                        <div className="stat-number">ZERO</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Data Loss (Blockchain)</div>
+
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        flexWrap: 'nowrap'
+                    }}>
+                        <div style={{ textAlign: 'center', flex: 1 }}>
+                            <div className="stat-number">2 Hrs</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Advance Prediction</div>
+                        </div>
+                        <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} className="hidden-mobile"></div>
+                        <div style={{ textAlign: 'center', flex: 1 }}>
+                            <div className="stat-number">50M+</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Lives Covered</div>
+                        </div>
+                        <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} className="hidden-mobile"></div>
+                        <div style={{ textAlign: 'center', flex: 1 }}>
+                            <div className="stat-number">100%</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Offline Reach</div>
+                        </div>
+                        <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} className="hidden-mobile"></div>
+                        <div style={{ textAlign: 'center', flex: 1 }}>
+                            <div className="stat-number">17+</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Agencies Unified</div>
+                        </div>
+                        <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} className="hidden-mobile"></div>
+                        <div style={{ textAlign: 'center', flex: 1 }}>
+                            <div className="stat-number">ZERO</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Data Loss</div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -172,7 +177,7 @@ const LandingPage = () => {
                     <Activity color="var(--accent-primary)" size={24} />
                     <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem' }}>DisasterSync</span>
                 </div>
-                <p>&copy; 2024 DisasterSync. Built for India with ❤️.</p>
+                <p>&copy; 2025 DisasterSync. Built for India with ❤️.</p>
             </footer>
 
         </div>

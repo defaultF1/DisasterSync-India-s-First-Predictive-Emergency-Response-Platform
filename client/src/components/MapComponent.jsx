@@ -1,7 +1,8 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import indiaBoundary from '../data/india-boundary.json';
 
 // Fix default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -65,14 +66,67 @@ const MapComponent = ({ resources = [], disaster }) => {
     return (
         <MapContainer
             center={position}
-            zoom={12}
+            zoom={5}
             style={{ height: '100%', width: '100%', borderRadius: '16px', zIndex: 1 }}
         >
-            {/* Dark themed map tiles */}
+            {/* Dark themed map tiles (No Labels to remove incorrect borders/names) */}
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
             />
+
+            {/* Official India Boundary Overlay */}
+            <GeoJSON 
+                data={indiaBoundary} 
+                style={{
+                    color: '#ff9933', // Saffron color for visibility
+                    weight: 2,
+                    fillColor: '#ff9933', // Slight fill to help mask underlying details if any
+                    fillOpacity: 0.05,
+                    dashArray: '' // Solid line for official border
+                }}
+                interactive={false} 
+            />
+
+            {/* Custom Region Labels (Asserting UTs) */}
+            <Marker position={[33.2, 75.5]} icon={L.divIcon({
+                className: 'region-label',
+                html: '<div style="color: #fbbf24; font-weight: bold; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); width: 150px; text-align: center;">UT of Jammu & Kashmir</div>',
+                iconSize: [150, 20],
+                iconAnchor: [75, 10]
+            })} />
+            
+            <Marker position={[34.5, 77.6]} icon={L.divIcon({
+                className: 'region-label',
+                html: '<div style="color: #fbbf24; font-weight: bold; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); width: 150px; text-align: center;">UT of Ladakh</div>',
+                iconSize: [150, 20],
+                iconAnchor: [75, 10]
+            })} />
+
+            {/* Major Cities Markers */}
+            {[
+                { name: 'Srinagar', pos: [34.0837, 74.7973] },
+                { name: 'Leh', pos: [34.1526, 77.5770] },
+                { name: 'Jammu', pos: [32.7266, 74.8570] },
+                { name: 'New Delhi', pos: [28.6139, 77.2090] }, // Adding Delhi for context
+                { name: 'Mumbai', pos: [19.0760, 72.8777] },
+            ].map((city, idx) => (
+                <Marker 
+                    key={`city-${idx}`} 
+                    position={city.pos} 
+                    icon={L.divIcon({
+                        className: 'city-marker',
+                        html: `
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <div style="width: 8px; height: 8px; background: white; border-radius: 50%; border: 2px solid #64748b;"></div>
+                                <div style="color: white; font-size: 12px; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.9); white-space: nowrap;">${city.name}</div>
+                            </div>
+                        `,
+                        iconSize: [100, 40],
+                        iconAnchor: [50, 6]
+                    })}
+                />
+            ))}
 
             {/* Disaster Zone Visualization */}
             {disaster && disaster.coordinates && (

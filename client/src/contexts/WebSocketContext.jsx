@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { toast } from 'react-toastify';
+import { API_URL } from '../utils/apiConfig';
 
 const WebSocketContext = createContext(null);
 
@@ -70,7 +71,7 @@ export const WebSocketProvider = ({ children }) => {
     ]);
 
     useEffect(() => {
-        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const backendUrl = API_URL;
         const newSocket = io(backendUrl);
 
         newSocket.on('connect', () => {

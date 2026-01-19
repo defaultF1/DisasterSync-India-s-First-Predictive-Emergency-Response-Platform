@@ -3,6 +3,8 @@ import { Bell, Send, CheckCircle, AlertCircle, Radio, Smartphone, Volume2, Messa
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 
+import { API_URL } from '../utils/apiConfig';
+
 const AlertManagement = () => {
     const [alertHistory, setAlertHistory] = useState([]);
     const [newAlert, setNewAlert] = useState({
@@ -17,9 +19,8 @@ const AlertManagement = () => {
     }, []);
 
     const fetchAlertHistory = async () => {
-        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         try {
-            const res = await fetch(`${backendUrl}/api/alerts/history`);
+            const res = await fetch(`${API_URL}/api/alerts/history`);
             const data = await res.json();
             setAlertHistory(data);
         } catch (err) {
@@ -42,9 +43,8 @@ const AlertManagement = () => {
             return;
         }
 
-        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         try {
-            const res = await fetch(`${backendUrl}/api/alerts`, {
+            const res = await fetch(`${API_URL}/api/alerts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newAlert)
@@ -150,7 +150,7 @@ const AlertManagement = () => {
                                         style={{
                                             padding: '0.75rem',
                                             borderRadius: '8px',
-                                            border: `2px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+                                            border: `2px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'} `,
                                             background: isSelected ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                                             color: isSelected ? 'var(--accent-primary)' : 'var(--text-secondary)',
                                             cursor: 'pointer',
@@ -201,7 +201,7 @@ const AlertManagement = () => {
                                 className="glass-panel"
                                 style={{
                                     padding: '1rem',
-                                    borderLeft: `4px solid ${getSeverityColor(alert.type)}`,
+                                    borderLeft: `4px solid ${getSeverityColor(alert.type)} `,
                                     transition: 'all 0.2s ease'
                                 }}
                             >
@@ -214,7 +214,7 @@ const AlertManagement = () => {
                                             fontSize: '0.75rem',
                                             fontWeight: '600',
                                             textTransform: 'uppercase',
-                                            background: `${getSeverityColor(alert.type)}20`,
+                                            background: `${getSeverityColor(alert.type)} 20`,
                                             color: getSeverityColor(alert.type),
                                             marginBottom: '0.5rem'
                                         }}>
@@ -265,7 +265,7 @@ const AlertManagement = () => {
                                         </div>
                                         <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--accent-success)' }}>
                                             {alert.deliveryStats?.delivered
-                                                ? `${((alert.deliveryStats.delivered / alert.deliveryStats.sent) * 100).toFixed(1)}%`
+                                                ? `${((alert.deliveryStats.delivered / alert.deliveryStats.sent) * 100).toFixed(1)}% `
                                                 : 'Processing...'}
                                         </div>
                                     </div>

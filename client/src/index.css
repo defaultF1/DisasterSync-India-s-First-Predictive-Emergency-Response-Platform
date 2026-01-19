@@ -194,7 +194,7 @@ h6 {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 0 2rem;
+  padding: 80px 2rem 0 2rem;
 }
 
 .hero-bg {
@@ -262,11 +262,12 @@ h6 {
 }
 
 .stat-number {
-  font-size: 3rem;
+  font-size: 2.2rem;
   font-weight: 700;
   color: var(--accent-primary);
   margin-bottom: 0.5rem;
   font-family: var(--font-heading);
+  white-space: nowrap;
 }
 
 /* Auth Page */
