@@ -239,6 +239,18 @@ const Dashboard = () => {
           height: 100%;
           padding-bottom: 20px;
         }
+        
+        @media screen and (max-width: 900px) {
+          .dashboard-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        
+        @media screen and (max-width: 600px) {
+          .dashboard-grid {
+            grid-template-columns: 1fr;
+          }
+        }
 
         .stat-card {
           padding: 20px;
