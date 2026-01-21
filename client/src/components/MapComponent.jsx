@@ -57,45 +57,60 @@ const createCustomIcon = (type, status) => {
     });
 };
 
-const MapComponent = ({ resources = [], disaster }) => {
-    // Auto-center on disaster if available, otherwise Rishikesh
-    const position = disaster && disaster.coordinates
-        ? disaster.coordinates
-        : [30.0869, 78.2676];
+const MapComponent = ({ resources = [], disaster, earthquakes = [] }) => {
+    // Auto-center logic:
+    // 1. If disaster prediction exists, focus there.
+    // 2. If recent earthquakes exist, focus on the strongest one.
+    // 3. Default to India center or Delhi.
+
+    let position = [22.5937, 78.9629]; // Center of India
+    let zoomLevel = 5;
+
+    if (disaster && disaster.coordinates) {
+        position = disaster.coordinates;
+        zoomLevel = 6;
+    } else if (earthquakes && earthquakes.length > 0) {
+        // Find strongest quake
+        const strongest = earthquakes.reduce((prev, current) => (prev.magnitude > current.magnitude) ? prev : current);
+        if (strongest.coordinates) {
+            position = strongest.coordinates;
+            zoomLevel = 5;
+        }
+    }
 
     return (
         <MapContainer
             center={position}
-            zoom={5}
+            zoom={zoomLevel}
             style={{ height: '100%', width: '100%', borderRadius: '16px', zIndex: 1 }}
         >
-            {/* Dark themed map tiles (No Labels to remove incorrect borders/names) */}
+            {/* Dark themed map tiles */}
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
             />
 
             {/* Official India Boundary Overlay */}
-            <GeoJSON 
-                data={indiaBoundary} 
+            <GeoJSON
+                data={indiaBoundary}
                 style={{
-                    color: '#ff9933', // Saffron color for visibility
+                    color: '#ff9933',
                     weight: 2,
-                    fillColor: '#ff9933', // Slight fill to help mask underlying details if any
+                    fillColor: '#ff9933',
                     fillOpacity: 0.05,
-                    dashArray: '' // Solid line for official border
+                    dashArray: ''
                 }}
-                interactive={false} 
+                interactive={false}
             />
 
-            {/* Custom Region Labels (Asserting UTs) */}
+            {/* Region Labels */}
             <Marker position={[33.2, 75.5]} icon={L.divIcon({
                 className: 'region-label',
                 html: '<div style="color: #fbbf24; font-weight: bold; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); width: 150px; text-align: center;">UT of Jammu & Kashmir</div>',
                 iconSize: [150, 20],
                 iconAnchor: [75, 10]
             })} />
-            
+
             <Marker position={[34.5, 77.6]} icon={L.divIcon({
                 className: 'region-label',
                 html: '<div style="color: #fbbf24; font-weight: bold; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); width: 150px; text-align: center;">UT of Ladakh</div>',
@@ -107,19 +122,21 @@ const MapComponent = ({ resources = [], disaster }) => {
             {[
                 { name: 'Srinagar', pos: [34.0837, 74.7973] },
                 { name: 'Leh', pos: [34.1526, 77.5770] },
-                { name: 'Jammu', pos: [32.7266, 74.8570] },
-                { name: 'New Delhi', pos: [28.6139, 77.2090] }, // Adding Delhi for context
+                { name: 'New Delhi', pos: [28.6139, 77.2090] },
                 { name: 'Mumbai', pos: [19.0760, 72.8777] },
+                { name: 'Chennai', pos: [13.0827, 80.2707] },
+                { name: 'Kolkata', pos: [22.5726, 88.3639] },
+                { name: 'Bengaluru', pos: [12.9716, 77.5946] }
             ].map((city, idx) => (
-                <Marker 
-                    key={`city-${idx}`} 
-                    position={city.pos} 
+                <Marker
+                    key={`city-${idx}`}
+                    position={city.pos}
                     icon={L.divIcon({
                         className: 'city-marker',
                         html: `
                             <div style="display: flex; flex-direction: column; align-items: center;">
-                                <div style="width: 8px; height: 8px; background: white; border-radius: 50%; border: 2px solid #64748b;"></div>
-                                <div style="color: white; font-size: 12px; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.9); white-space: nowrap;">${city.name}</div>
+                                <div style="width: 6px; height: 6px; background: white; border-radius: 50%; border: 1px solid #64748b;"></div>
+                                <div style="color: #94a3b8; font-size: 10px; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.9); white-space: nowrap;">${city.name}</div>
                             </div>
                         `,
                         iconSize: [100, 40],
@@ -128,10 +145,62 @@ const MapComponent = ({ resources = [], disaster }) => {
                 />
             ))}
 
-            {/* Disaster Zone Visualization */}
+            {/* Real Earthquake Markers */}
+            {earthquakes.map((quake) => (
+                <React.Fragment key={quake.id}>
+                    {/* Ripple Effect Circle */}
+                    <Circle
+                        center={quake.coordinates}
+                        pathOptions={{
+                            color: '#fbbf24',
+                            fillColor: '#fbbf24',
+                            fillOpacity: 0.2,
+                            weight: 1,
+                        }}
+                        radius={15000 * (quake.magnitude / 3)} // Radius scales with magnitude
+                    />
+                    {/* Core Danger Circle */}
+                    <Circle
+                        center={quake.coordinates}
+                        pathOptions={{
+                            color: '#dc2626',
+                            fillColor: '#ef4444',
+                            fillOpacity: 0.6,
+                            weight: 2
+                        }}
+                        radius={2000 * quake.magnitude}
+                    >
+                        <Popup className="custom-popup">
+                            <div style={{ padding: '8px', minWidth: '180px' }}>
+                                <h3 style={{
+                                    color: '#ef4444',
+                                    margin: '0 0 8px 0',
+                                    fontSize: '1rem',
+                                    fontWeight: '700'
+                                }}>
+                                    🌋 Earthquake detected
+                                </h3>
+                                <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}>
+                                    <strong>Magnitude:</strong> <span style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{quake.magnitude.toFixed(1)}</span>
+                                </div>
+                                <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}>
+                                    <strong>Region:</strong> {quake.region}
+                                </div>
+                                <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}>
+                                    <strong>Time:</strong> {new Date(quake.time).toLocaleTimeString()}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '6px' }}>
+                                    Source: USGS Real-time Feed
+                                </div>
+                            </div>
+                        </Popup>
+                    </Circle>
+                </React.Fragment>
+            ))}
+
+            {/* Original Disaster Prediction Visualization (if exists) */}
             {disaster && disaster.coordinates && (
                 <>
-                    {/* Outer warning circle */}
                     <Circle
                         center={disaster.coordinates}
                         pathOptions={{
@@ -144,7 +213,6 @@ const MapComponent = ({ resources = [], disaster }) => {
                         radius={disaster.radius || 15000}
                     />
 
-                    {/* Inner danger zone */}
                     <Circle
                         center={disaster.coordinates}
                         pathOptions={{
@@ -174,21 +242,6 @@ const MapComponent = ({ resources = [], disaster }) => {
                                 <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}>
                                     <strong>Time:</strong> {disaster.predictedTime}
                                 </div>
-                                <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}>
-                                    <strong>Confidence:</strong> <span style={{ color: '#10b981' }}>{disaster.confidence}%</span>
-                                </div>
-                                {disaster.aiModel && (
-                                    <div style={{
-                                        marginTop: '8px',
-                                        padding: '4px 8px',
-                                        background: 'rgba(59, 130, 246, 0.1)',
-                                        borderRadius: '4px',
-                                        fontSize: '0.75rem',
-                                        color: '#3b82f6'
-                                    }}>
-                                        AI Model: {disaster.aiModel}
-                                    </div>
-                                )}
                             </div>
                         </Popup>
                     </Circle>
@@ -212,49 +265,8 @@ const MapComponent = ({ resources = [], disaster }) => {
                             }}>
                                 {res.type}
                             </div>
-
-                            {res.team && (
-                                <div style={{ fontSize: '0.85rem', marginBottom: '4px', color: '#cbd5e1' }}>
-                                    <strong>Team:</strong> {res.team}
-                                </div>
-                            )}
-
                             <div style={{ fontSize: '0.85rem', marginBottom: '4px' }}>
-                                <strong>Status:</strong> <span style={{
-                                    color: res.status === 'Available' ? '#10b981' :
-                                        res.status === 'Busy' || res.status === 'In Transit' ? '#f59e0b' : '#94a3b8',
-                                    fontWeight: '600'
-                                }}>
-                                    {res.status}
-                                </span>
-                            </div>
-
-                            {res.fuel && (
-                                <div style={{ fontSize: '0.85rem', marginBottom: '4px' }}>
-                                    <strong>Fuel:</strong> <span style={{
-                                        color: res.fuel === 'Full' ? '#10b981' :
-                                            res.fuel === 'Medium' ? '#f59e0b' : '#ef4444'
-                                    }}>
-                                        {res.fuel}
-                                    </span>
-                                </div>
-                            )}
-
-                            {res.capacity !== undefined && (
-                                <div style={{ fontSize: '0.85rem', marginBottom: '4px', color: '#cbd5e1' }}>
-                                    <strong>Capacity:</strong> {res.occupancy !== undefined ? `${res.occupancy}/${res.capacity}` : res.capacity}
-                                </div>
-                            )}
-
-                            <div style={{
-                                fontSize: '0.75rem',
-                                marginTop: '6px',
-                                padding: '4px 6px',
-                                background: 'rgba(59, 130, 246, 0.15)',
-                                borderRadius: '4px',
-                                color: '#3b82f6'
-                            }}>
-                                📍 {res.lat.toFixed(4)}, {res.lng.toFixed(4)}
+                                <strong>Status:</strong> {res.status}
                             </div>
                         </div>
                     </Popup>

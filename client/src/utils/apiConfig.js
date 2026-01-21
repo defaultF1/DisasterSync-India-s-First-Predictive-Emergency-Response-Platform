@@ -12,8 +12,8 @@ const getApiUrl = () => {
         return import.meta.env.VITE_API_URL;
     }
 
-    // Default to local development
-    return 'http://localhost:3000';
+    // Default to local development (allow Vite proxy to handle it)
+    return '';
 };
 
 export const API_URL = getApiUrl();

@@ -1,13 +1,11 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const User = require('./models/User'); // Mongoose Model
 
 // Secret key for JWT (in production, use environment variable)
-const JWT_SECRET = process.env.JWT_SECRET || 'disastersync-super-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '24h';
 const REFRESH_EXPIRES_IN = '7d';
-
-// In-memory user store (replace with MongoDB in Step 2)
-const USERS = [];
 
 // User roles
 const ROLES = {
@@ -31,14 +29,14 @@ const comparePassword = async (password, hash) => {
 // Generate JWT tokens
 const generateTokens = (user) => {
     const payload = {
-        id: user.id,
+        id: user._id, // MongoDB ID
         email: user.email,
         role: user.role,
         agency: user.agency
     };
 
     const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    const refreshToken = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
+    const refreshToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
 
     return { accessToken, refreshToken };
 };
@@ -57,7 +55,7 @@ const registerUser = async (userData) => {
     const { email, password, name, role = ROLES.RESPONDER, agency } = userData;
 
     // Check if user exists
-    const existingUser = USERS.find(u => u.email === email);
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
         throw new Error('User already exists');
     }
@@ -65,28 +63,29 @@ const registerUser = async (userData) => {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user
-    const newUser = {
-        id: `user_${Date.now()}`,
+    // Create user in MongoDB
+    const user = await User.create({
+        name,
         email,
         password: hashedPassword,
-        name,
         role,
         agency: agency || 'Unknown',
-        createdAt: new Date(),
         lastLogin: null
-    };
-
-    USERS.push(newUser);
+    });
 
     // Return user without password
-    const { password: _, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
+    return {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        agency: user.agency
+    };
 };
 
 // Login user
 const loginUser = async (email, password) => {
-    const user = USERS.find(u => u.email === email);
+    const user = await User.findOne({ email });
     if (!user) {
         throw new Error('Invalid credentials');
     }
@@ -98,13 +97,22 @@ const loginUser = async (email, password) => {
 
     // Update last login
     user.lastLogin = new Date();
+    await user.save();
 
     // Generate tokens
     const tokens = generateTokens(user);
 
     // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
-    return { user: userWithoutPassword, ...tokens };
+    return {
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            agency: user.agency
+        },
+        ...tokens
+    };
 };
 
 // Auth middleware - protect routes
@@ -142,30 +150,32 @@ const requireRole = (...allowedRoles) => {
 };
 
 // Get all users (admin only)
-const getAllUsers = () => {
-    return USERS.map(({ password, ...user }) => user);
+const getAllUsers = async () => {
+    return await User.find().select('-password');
 };
 
 // Seed default admin user
 const seedDefaultUsers = async () => {
-    if (USERS.length === 0) {
+    const existingAdmin = await User.findOne({ email: 'admin@ndrf.gov.in' });
+
+    if (!existingAdmin) {
         await registerUser({
-            email: 'admin@ndrf.gov.in',
-            password: 'Admin@123',
+            email: process.env.ADMIN_EMAIL || 'admin@ndrf.gov.in',
+            password: process.env.ADMIN_PASSWORD || 'Admin@123', // Will be hashed by registerUser
             name: 'NDRF Admin',
             role: ROLES.ADMIN,
             agency: 'NDRF'
         });
 
         await registerUser({
-            email: 'commander@police.gov.in',
-            password: 'Commander@123',
+            email: process.env.COMMANDER_EMAIL || 'commander@police.gov.in',
+            password: process.env.COMMANDER_PASSWORD || 'Commander@123',
             name: 'District Commander',
             role: ROLES.COMMANDER,
             agency: 'State Police'
         });
 
-        console.log('🔐 Default users seeded');
+        console.log('🔐 Default users seeded in MongoDB');
     }
 };
 

@@ -1,10 +1,12 @@
 const express = require('express');
+require('dotenv').config();
 const cors = require('cors');
 const { Server } = require('socket.io');
 const http = require('http');
 const { v4: uuidv4 } = require('uuid');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const connectDB = require('./config/db'); // DB Config
 
 // Auth Module
 const {
@@ -29,6 +31,10 @@ const {
 
 const app = express();
 const server = http.createServer(app);
+
+// Connect to Database
+connectDB();
+
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || '*',

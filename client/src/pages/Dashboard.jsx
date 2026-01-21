@@ -9,6 +9,8 @@ import { API_URL } from '../utils/apiConfig';
 const Dashboard = () => {
     const { predictions, resources, isConnected } = useWebSocket();
     const [liveFeed, setLiveFeed] = useState([]);
+    const [earthquakes, setEarthquakes] = useState([]);
+    const [weather, setWeather] = useState(null);
     const [activeAlert, setActiveAlert] = useState(false);
 
     const prediction = predictions && predictions.length > 0 ? predictions[0] : null;
@@ -19,6 +21,21 @@ const Dashboard = () => {
             .then(res => res.json())
             .then(data => setLiveFeed(data))
             .catch(err => console.error('Failed to fetch feed', err));
+
+        // Fetch real-time earthquakes
+        fetch(`${API_URL}/api/earthquakes`)
+            .then(res => res.json())
+            .then(data => {
+                // Filter for "significant" quakes to avoid clutter if needed, or take top 5
+                setEarthquakes(data.slice(0, 10));
+            })
+            .catch(err => console.error('Failed to fetch earthquakes', err));
+
+        // Fetch real weather for default region (e.g., Delhi)
+        fetch(`${API_URL}/api/weather/Delhi`)
+            .then(res => res.json())
+            .then(data => setWeather(data))
+            .catch(err => console.error('Failed to fetch weather', err));
     }, []);
 
     const handleSendAlert = async () => {
@@ -69,19 +86,21 @@ const Dashboard = () => {
     return (
         <div className="dashboard-grid">
             {/* Top Stats Row */}
-            <div className="stat-card glass-panel" style={{ borderLeft: `4px solid ${prediction ? getSeverityColor(prediction.severity) : 'var(--border-color)'}` }}>
+            <div className="stat-card glass-panel" style={{ borderLeft: `4px solid ${prediction ? getSeverityColor(prediction.severity) : 'var(--accent-primary)'}` }}>
                 <div className="stat-header">
-                    <span className="stat-title">AI Prediction</span>
+                    <span className="stat-title">{prediction ? 'AI Prediction' : 'Live Weather (Delhi)'}</span>
                     <AlertTriangle color={prediction ? getSeverityColor(prediction.severity) : 'var(--text-muted)'} size={20} />
                 </div>
-                <div className="stat-value">{prediction ? prediction.type : 'Monitoring...'}</div>
+                <div className="stat-value">
+                    {prediction ? prediction.type : (weather ? `${weather.temp}°C ${weather.weather}` : 'Monitoring...')}
+                </div>
                 <div className="stat-meta">
                     {prediction ? (
                         <>
                             Confidence: <span style={{ color: 'var(--accent-success)', fontWeight: '600' }}>{prediction.confidence.toFixed(1)}%</span>
                         </>
                     ) : (
-                        'No immediate threats'
+                        weather ? `Humidity: ${weather.humidity}% • Wind: ${weather.windSpeed} km/h` : 'No immediate threats'
                     )}
                 </div>
             </div>
@@ -128,7 +147,7 @@ const Dashboard = () => {
                     </div>
                 </div>
                 <div className="map-container">
-                    <MapComponent resources={resources} disaster={prediction} />
+                    <MapComponent resources={resources} disaster={prediction} earthquakes={earthquakes} />
                 </div>
             </div>
 
