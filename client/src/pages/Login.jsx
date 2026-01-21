@@ -9,8 +9,8 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [credentials, setCredentials] = useState({
-        email: import.meta.env.VITE_DEMO_ADMIN_EMAIL || '',
-        password: import.meta.env.VITE_DEMO_ADMIN_PASSWORD || ''
+        email: 'admin@ndrf.in',
+        password: 'admin123'
     });
 
     const handleLogin = async (e) => {
@@ -45,7 +45,7 @@ const Login = () => {
             const demoUser = {
                 id: 'demo-admin-id',
                 name: 'Demo Admin',
-                email: 'admin@ndrf.gov.in',
+                email: 'admin@ndrf.in',
                 role: 'admin',
                 agency: 'NDRF'
             };
@@ -154,8 +154,7 @@ const Login = () => {
                     color: 'var(--text-secondary)'
                 }}>
                     <strong>Demo Credentials:</strong><br />
-                    Admin: {import.meta.env.VITE_DEMO_ADMIN_EMAIL} / {import.meta.env.VITE_DEMO_ADMIN_PASSWORD}<br />
-                    Commander: {import.meta.env.VITE_DEMO_COMMANDER_EMAIL} / {import.meta.env.VITE_DEMO_COMMANDER_PASSWORD}
+                    Admin: admin@ndrf.in / admin123
                 </div>
 
             </div>
