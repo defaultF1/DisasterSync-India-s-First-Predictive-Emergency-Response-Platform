@@ -15,7 +15,7 @@ export const useWebSocket = () => {
 
 export const WebSocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
-    const [isConnected, setIsConnected] = useState(false);
+    const [isConnected, setIsConnected] = useState(true); // DEMO: Always show as connected
 
     // MOCK DATA FOR PRESENTATION
     const [predictions, setPredictions] = useState([
@@ -77,18 +77,13 @@ export const WebSocketProvider = ({ children }) => {
         newSocket.on('connect', () => {
             console.log('✅ WebSocket connected');
             setIsConnected(true);
-            toast.success('Real-time connection established', {
-                position: 'bottom-right',
-                autoClose: 2000
-            });
+            // DEMO: Suppress connection toast
         });
 
         newSocket.on('disconnect', () => {
             console.log('❌ WebSocket disconnected');
-            setIsConnected(false);
-            toast.warning('Connection lost - attempting to reconnect', {
-                position: 'bottom-right'
-            });
+            // DEMO: Don't change isConnected to false, keep UI showing "Live"
+            // DEMO: Suppress disconnect warning toast
         });
 
         newSocket.on('predictions', (data) => {

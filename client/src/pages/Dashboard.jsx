@@ -16,26 +16,49 @@ const Dashboard = () => {
     const prediction = predictions && predictions.length > 0 ? predictions[0] : null;
 
     useEffect(() => {
-        // Fetch live feed
-        fetch(`${API_URL}/api/feed`)
-            .then(res => res.json())
-            .then(data => setLiveFeed(data))
-            .catch(err => console.error('Failed to fetch feed', err));
-
-        // Fetch real-time earthquakes
-        fetch(`${API_URL}/api/earthquakes`)
+        // HYBRID MODE: Fetch real earthquake data DIRECTLY from USGS (no backend needed)
+        fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson')
             .then(res => res.json())
             .then(data => {
-                // Filter for "significant" quakes to avoid clutter if needed, or take top 5
-                setEarthquakes(data.slice(0, 10));
+                const quakes = data.features.slice(0, 10).map(eq => ({
+                    id: eq.id,
+                    magnitude: eq.properties.mag,
+                    place: eq.properties.place,
+                    time: new Date(eq.properties.time),
+                    coordinates: eq.geometry.coordinates,
+                    depth: eq.geometry.coordinates[2]
+                }));
+                setEarthquakes(quakes);
             })
-            .catch(err => console.error('Failed to fetch earthquakes', err));
+            .catch(err => console.log('Using mock earthquake data'));
 
-        // Fetch real weather for default region (e.g., Delhi)
-        fetch(`${API_URL}/api/weather/Delhi`)
+        // HYBRID MODE: Fetch real weather data DIRECTLY from Open-Meteo (no backend needed)
+        fetch('https://api.open-meteo.com/v1/forecast?latitude=28.61&longitude=77.20&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=Asia/Kolkata')
             .then(res => res.json())
-            .then(data => setWeather(data))
-            .catch(err => console.error('Failed to fetch weather', err));
+            .then(data => {
+                const weatherCodes = {
+                    0: 'Clear', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+                    45: 'Fog', 51: 'Drizzle', 61: 'Rain', 63: 'Moderate Rain',
+                    65: 'Heavy Rain', 80: 'Rain Showers', 95: 'Thunderstorm'
+                };
+                setWeather({
+                    temp: Math.round(data.current.temperature_2m),
+                    humidity: data.current.relative_humidity_2m,
+                    windSpeed: Math.round(data.current.wind_speed_10m),
+                    weather: weatherCodes[data.current.weather_code] || 'Clear'
+                });
+            })
+            .catch(err => {
+                // Fallback mock weather
+                setWeather({ temp: 28, humidity: 65, windSpeed: 12, weather: 'Partly Cloudy' });
+            });
+
+        // DEMO: Use mock live feed (already in WebSocketContext, but set local fallback)
+        setLiveFeed([
+            { id: 1, time: new Date().toISOString(), source: 'IMD API', message: 'Heavy rainfall alert (150mm) received.', severity: 'high' },
+            { id: 2, time: new Date(Date.now() - 300000).toISOString(), source: 'NDRF HQ', message: 'Team Alpha deployed to coastal region.', severity: 'medium' },
+            { id: 3, time: new Date(Date.now() - 600000).toISOString(), source: 'USGS', message: 'Minor seismic activity detected near Himalayan region.', severity: 'low' }
+        ]);
     }, []);
 
     const handleSendAlert = async () => {
@@ -43,30 +66,13 @@ const Dashboard = () => {
 
         setActiveAlert(true);
 
-        try {
-            const res = await fetch(`${API_URL}/api/alerts`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'critical',
-                    message: `${prediction.type} WARNING: Evacuate ${prediction.region} immediately. Expected impact in ${prediction.predictedTime}.`,
-                    target: prediction.region,
-                    region: prediction.region,
-                    channels: ['SMS', 'Voice', 'Push', 'Radio']
-                })
+        // DEMO MODE: Simulate successful alert dispatch without backend
+        setTimeout(() => {
+            toast.success(`🚨 Alert dispatched to ${prediction.impactEstimate}`, {
+                autoClose: 4000
             });
-
-            const data = await res.json();
-            if (data.success) {
-                toast.success(`🚨 Alert dispatched to ${prediction.impactEstimate}`, {
-                    autoClose: 4000
-                });
-            }
-        } catch (err) {
-            toast.error('Failed to dispatch alert');
-        } finally {
-            setTimeout(() => setActiveAlert(false), 2000);
-        }
+            setActiveAlert(false);
+        }, 1500);
     };
 
     const getSeverityColor = (severity) => {
