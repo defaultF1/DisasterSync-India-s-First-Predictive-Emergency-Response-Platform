@@ -54,10 +54,8 @@ const Login = () => {
             localStorage.setItem('refreshToken', 'demo-refresh-token');
             localStorage.setItem('user', JSON.stringify(demoUser));
 
-            toast.warn('⚠️ Server Unreachable. Entering Demo Mode.', { autoClose: 3000 });
-            setTimeout(() => {
-                navigate('/dashboard');
-            }, 1000);
+            toast.success('Welcome back, Demo Admin!', { autoClose: 2000 });
+            navigate('/dashboard');
         } finally {
             setLoading(false);
         }
