@@ -3,6 +3,29 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 const http = require('http');
 const { v4: uuidv4 } = require('uuid');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+// Auth Module
+const {
+  ROLES,
+  registerUser,
+  loginUser,
+  authMiddleware,
+  requireRole,
+  getAllUsers,
+  seedDefaultUsers
+} = require('./auth');
+
+// Real Data Service - Open-Meteo & USGS APIs
+const {
+  fetchWeather,
+  fetchFloodData,
+  fetchEarthquakes,
+  getWeatherDescription,
+  calculateRiskScore,
+  INDIA_REGIONS
+} = require('./realDataService');
 
 const app = express();
 const server = http.createServer(app);
@@ -15,6 +38,21 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// Security Middleware - Helmet for HTTP headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Rate Limiting - Protect against DDoS
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { error: 'Too many requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use('/api/', limiter);
 
 // Production-ready CORS configuration
 const allowedOrigins = process.env.FRONTEND_URL
@@ -323,18 +361,91 @@ app.get('/api/blockchain', (req, res) => {
   res.json(BLOCKCHAIN);
 });
 
-// Weather simulation endpoint
-app.get('/api/weather/:region', (req, res) => {
-  const weatherData = {
-    region: req.params.region,
-    temperature: Math.floor(Math.random() * 15) + 20,
-    humidity: Math.floor(Math.random() * 40) + 60,
-    rainfall: Math.floor(Math.random() * 200),
-    windSpeed: Math.floor(Math.random() * 30) + 10,
-    conditions: ['Heavy Rain', 'Cloudy', 'Storm Warning'][Math.floor(Math.random() * 3)],
-    timestamp: new Date()
-  };
-  res.json(weatherData);
+// ============================================
+// 🌍 REAL DATA ENDPOINTS (Open-Meteo & USGS)
+// ============================================
+
+// Real weather data from Open-Meteo
+app.get('/api/weather/:region', async (req, res) => {
+  try {
+    const region = req.params.region.toLowerCase();
+    const coords = INDIA_REGIONS[region] || { lat: 28.61, lng: 77.20, name: region };
+
+    const weatherData = await fetchWeather(coords.lat, coords.lng);
+
+    if (weatherData.success) {
+      res.json({
+        region: coords.name,
+        temperature: weatherData.current.temperature,
+        humidity: weatherData.current.humidity,
+        rainfall: weatherData.current.precipitation,
+        windSpeed: weatherData.current.windSpeed,
+        conditions: getWeatherDescription(weatherData.current.weatherCode),
+        source: 'Open-Meteo API',
+        timestamp: weatherData.timestamp
+      });
+    } else {
+      // Fallback to simulated data if API fails
+      res.json({
+        region: coords.name,
+        temperature: Math.floor(Math.random() * 15) + 20,
+        humidity: Math.floor(Math.random() * 40) + 60,
+        rainfall: Math.floor(Math.random() * 200),
+        windSpeed: Math.floor(Math.random() * 30) + 10,
+        conditions: 'Data unavailable',
+        source: 'Fallback',
+        timestamp: new Date()
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch weather data' });
+  }
+});
+
+// Real earthquake data from USGS
+app.get('/api/earthquakes', async (req, res) => {
+  try {
+    const { magnitude = '2.5', period = 'day' } = req.query;
+    const data = await fetchEarthquakes(magnitude, period);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch earthquake data' });
+  }
+});
+
+// Flood data from Open-Meteo
+app.get('/api/floods/:region', async (req, res) => {
+  try {
+    const region = req.params.region.toLowerCase();
+    const coords = INDIA_REGIONS[region] || INDIA_REGIONS.rishikesh;
+
+    const data = await fetchFloodData(coords.lat, coords.lng);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch flood data' });
+  }
+});
+
+// AI Risk Score calculation
+app.get('/api/risk/:region', async (req, res) => {
+  try {
+    const region = req.params.region.toLowerCase();
+    const riskData = await calculateRiskScore(region);
+    res.json(riskData);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to calculate risk score' });
+  }
+});
+
+// Get available regions
+app.get('/api/regions', (req, res) => {
+  res.json({
+    regions: Object.entries(INDIA_REGIONS).map(([key, value]) => ({
+      id: key,
+      name: value.name,
+      coordinates: { lat: value.lat, lng: value.lng }
+    }))
+  });
 });
 
 // Live feed endpoint
@@ -394,12 +505,66 @@ app.post('/api/citizen-report', (req, res) => {
   res.json({ success: true, report });
 });
 
-server.listen(PORT, () => {
+// ============================================
+// 🔐 AUTHENTICATION ENDPOINTS
+// ============================================
+
+// Register new user
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, name, role, agency } = req.body;
+
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Email, password, and name are required.' });
+    }
+
+    const user = await registerUser({ email, password, name, role, agency });
+    res.status(201).json({ success: true, user });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const result = await loginUser(email, password);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    res.status(401).json({ error: error.message });
+  }
+});
+
+// Get current user profile (protected)
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+  res.json({ user: req.user });
+});
+
+// Get all users (admin only)
+app.get('/api/auth/users', authMiddleware, requireRole(ROLES.ADMIN), (req, res) => {
+  const users = getAllUsers();
+  res.json({ users });
+});
+
+// ============================================
+
+// Start server with user seeding
+server.listen(PORT, async () => {
+  // Seed default users
+  await seedDefaultUsers();
+
   console.log('\n╔════════════════════════════════════════════╗');
   console.log('║   🚨 DisasterSync Server ONLINE 🚨        ║');
   console.log('╚════════════════════════════════════════════╝');
   console.log(`\n📡 REST API: http://localhost:${PORT}`);
   console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
   console.log(`⛓️  Blockchain: Active`);
-  console.log(`🤖 AI Engine: Simulated\n`);
+  console.log(`🤖 AI Engine: Simulated`);
+  console.log(`🔐 Auth: JWT Enabled\n`);
 });

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Map as MapIcon, Siren, Activity, LogOut, BarChart3, Truck } from 'lucide-react';
-import { ToastContainer } from 'react-toastify';
+import { LayoutDashboard, Map as MapIcon, Siren, Activity, LogOut, BarChart3, Truck, User } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { WebSocketProvider } from './contexts/WebSocketContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
@@ -15,6 +17,8 @@ import ResourceCenter from './pages/ResourceCenter';
 function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.includes('/analytics')) return 'analytics';
@@ -24,6 +28,12 @@ function DashboardLayout() {
   };
 
   const activeTab = getActiveTab();
+
+  const handleLogout = () => {
+    logout();
+    toast.info('Logged out successfully');
+    navigate('/');
+  };
 
   return (
     <div className="app-container">
@@ -53,11 +63,24 @@ function DashboardLayout() {
         </div>
 
         <div className="mt-auto">
-          <button className="nav-item" onClick={() => navigate('/')}>
+          <button className="nav-item logout-btn" onClick={handleLogout}>
             <LogOut size={20} />
             <span>Logout</span>
           </button>
         </div>
+
+        {/* User Info */}
+        {user && (
+          <div className="user-info">
+            <User size={16} />
+            <div>
+              <div style={{ fontWeight: '600', fontSize: '0.85rem' }}>{user.name}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                {user.role} • {user.agency}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="status-indicator">
           <div className="status-dot"></div>
@@ -91,12 +114,14 @@ function DashboardLayout() {
 
       <style>{`
         .app-container { display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 260px; margin: 16px; padding: 24px; display: flex; flex-direction: column; gap: 2rem; border-radius: 20px; }
+        .sidebar { width: 260px; margin: 16px; padding: 24px; display: flex; flex-direction: column; gap: 1.5rem; border-radius: 20px; }
         .logo-section { display: flex; align-items: center; gap: 12px; font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: white; }
         .nav-links { display: flex; flex-direction: column; gap: 8px; flex: 1; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; border: none; background: transparent; color: var(--text-secondary); font-family: var(--font-body); font-size: 1rem; cursor: pointer; transition: all 0.2s ease; text-align: left; width: 100%; }
         .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
         .nav-item.active { background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), transparent); color: var(--accent-primary); border-left: 3px solid var(--accent-primary); }
+        .nav-item.logout-btn:hover { background: rgba(239, 68, 68, 0.1); color: var(--accent-danger); }
+        .user-info { display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; color: var(--text-primary); }
         .status-indicator { display: flex; align-items: center; gap: 8px; color: var(--accent-success); font-size: 0.875rem; font-weight: 500; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; }
         .status-dot { width: 8px; height: 8px; background: var(--accent-success); border-radius: 50%; box-shadow: 0 0 10px var(--accent-success); }
         .main-content { flex: 1; display: flex; flex-direction: column; margin: 16px 16px 16px 0; gap: 16px; }
@@ -112,14 +137,23 @@ function DashboardLayout() {
 function App() {
   return (
     <Router>
-      <WebSocketProvider>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard/*" element={<DashboardLayout />} />
-        </Routes>
-        <ToastContainer position="bottom-right" autoClose={3000} theme="dark" />
-      </WebSocketProvider>
+      <AuthProvider>
+        <WebSocketProvider>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/dashboard/*"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <ToastContainer position="bottom-right" autoClose={3000} theme="dark" />
+        </WebSocketProvider>
+      </AuthProvider>
     </Router>
   );
 }
