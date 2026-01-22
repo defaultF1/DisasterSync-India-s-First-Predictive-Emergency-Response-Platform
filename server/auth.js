@@ -166,20 +166,33 @@ const getAllUsers = async () => {
 
 // Seed default admin user
 const seedDefaultUsers = async () => {
-    const existingAdmin = await User.findOne({ email: 'admin@ndrf.gov.in' });
+    // Validate required environment variables
+    if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+        console.error('⚠️  ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env file to seed admin user.');
+        console.error('   Skipping admin user creation for security reasons.');
+        return;
+    }
+
+    if (!process.env.COMMANDER_EMAIL || !process.env.COMMANDER_PASSWORD) {
+        console.error('⚠️  COMMANDER_EMAIL and COMMANDER_PASSWORD must be set in .env file.');
+        console.error('   Skipping commander user creation for security reasons.');
+        return;
+    }
+
+    const existingAdmin = await User.findOne({ email: process.env.ADMIN_EMAIL });
 
     if (!existingAdmin) {
         await registerUser({
-            email: process.env.ADMIN_EMAIL || 'admin@ndrf.gov.in',
-            password: process.env.ADMIN_PASSWORD || 'Admin@123', // Will be hashed by registerUser
+            email: process.env.ADMIN_EMAIL,
+            password: process.env.ADMIN_PASSWORD,
             name: 'NDRF Admin',
             role: ROLES.ADMIN,
             agency: 'NDRF'
         });
 
         await registerUser({
-            email: process.env.COMMANDER_EMAIL || 'commander@police.gov.in',
-            password: process.env.COMMANDER_PASSWORD || 'Commander@123',
+            email: process.env.COMMANDER_EMAIL,
+            password: process.env.COMMANDER_PASSWORD,
             name: 'District Commander',
             role: ROLES.COMMANDER,
             agency: 'State Police'
