@@ -26,8 +26,15 @@ const {
   fetchEarthquakes,
   getWeatherDescription,
   calculateRiskScore,
+  fetchAllHighRiskCities,
   INDIA_REGIONS
 } = require('./realDataService');
+
+// Twilio Client
+const twilio = require('twilio');
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 const app = express();
 const server = http.createServer(app);
@@ -138,7 +145,7 @@ let RESOURCES = [
   {
     id: 'amb_1',
     type: 'Ambulance',
-    status: 'Available',
+    status: 'Deployed', // DEMO: Always deployed as requested
     fuel: 'Full',
     lat: 30.1000,
     lng: 78.2800,
@@ -241,30 +248,71 @@ io.on('connection', (socket) => {
 });
 
 // Simulate real-time updates
-setInterval(() => {
-  // Update confidence scores
-  DISASTER_PREDICTIONS = DISASTER_PREDICTIONS.map(pred => ({
-    ...pred,
-    confidence: Math.min(95, pred.confidence + Math.random() * 2 - 0.5),
-    lastUpdated: new Date()
-  }));
+// Simulate real-time updates & AI Prediction Loop
+setInterval(async () => {
+  try {
+    // 1. Fetch real weather risks for all high-risk cities
+    // Pass 'false' for forceDisaster (unless globally enabled, but for background loop we usually want real data)
+    const riskData = await fetchAllHighRiskCities(false);
 
-  // Update resource positions slightly
-  RESOURCES = RESOURCES.map(res => {
-    if (res.type !== 'Shelter') {
-      return {
-        ...res,
-        lat: res.lat + (Math.random() - 0.5) * 0.001,
-        lng: res.lng + (Math.random() - 0.5) * 0.001,
-        lastUpdate: new Date()
-      };
+    if (riskData.success && riskData.cities.length > 0) {
+      // Check for critical risks to auto-trigger predictions
+      riskData.cities.forEach(cityData => {
+        if (cityData.shouldTriggerAlert) {
+          // Create a new predictive alert if one doesn't exist for this region recently
+          const existingAlert = DISASTER_PREDICTIONS.find(
+            p => p.region === cityData.region &&
+              (new Date() - new Date(p.lastUpdated)) < 3600000 // 1 hour
+          );
+
+          if (!existingAlert) {
+            const newPrediction = {
+              id: `pred_${Date.now()}`,
+              type: cityData.riskType,
+              region: cityData.region,
+              severity: cityData.level,
+              confidence: cityData.score,
+              predictedTime: '2 hrs',
+              timeInMinutes: 120,
+              impactEstimate: 'High population density area',
+              coordinates: [cityData.coordinates.lat, cityData.coordinates.lng],
+              status: 'Active',
+              radius: 15000,
+              aiModel: 'Heuristic-Risk-v1',
+              lastUpdated: new Date(),
+              factors: cityData.factors
+            };
+
+            DISASTER_PREDICTIONS.push(newPrediction);
+            io.emit('new-prediction', newPrediction);
+            console.log(`🤖 AI AUTO-PREDICTION: ${cityData.riskType} in ${cityData.region} (Score: ${cityData.score})`);
+          }
+        }
+      });
     }
-    return res;
-  });
 
-  io.emit('predictions', DISASTER_PREDICTIONS);
-  io.emit('resources', RESOURCES);
-}, 5000);
+    // 2. Update Random Movements for Mock Resources
+    RESOURCES = RESOURCES.map(res => {
+      if (res.type !== 'Shelter') {
+        return {
+          ...res,
+          lat: res.lat + (Math.random() - 0.5) * 0.001,
+          lng: res.lng + (Math.random() - 0.5) * 0.001,
+          lastUpdate: new Date()
+        };
+      }
+      return res;
+    });
+
+    // Broadcast updates
+    io.emit('predictions', DISASTER_PREDICTIONS);
+    io.emit('resources', RESOURCES);
+    io.emit('live-risk-feed', riskData);
+
+  } catch (error) {
+    console.error('Error in background loop:', error.message);
+  }
+}, 10000); // Check every 10 seconds
 
 // --- REST API Endpoints ---
 
@@ -295,12 +343,19 @@ app.get('/api/resources', (req, res) => {
 });
 
 app.post('/api/resources/:id/dispatch', (req, res) => {
-  const { destination } = req.body;
+  const { destination, targetCoordinates } = req.body;
   const resource = RESOURCES.find(r => r.id === req.params.id);
 
   if (resource) {
     resource.status = 'In Transit';
     resource.lastUpdate = new Date();
+
+    // DEMO MAGIC: Instantaneously move resource to target location (or nearby)
+    if (targetCoordinates) {
+      // Add slight random offset so they don't stack perfectly on top of the disaster marker
+      resource.lat = targetCoordinates[0] + (Math.random() - 0.5) * 0.01;
+      resource.lng = targetCoordinates[1] + (Math.random() - 0.5) * 0.01;
+    }
 
     const block = addToBlockchain('RESOURCE_DISPATCH', {
       resourceId: resource.id,
@@ -365,6 +420,77 @@ app.get('/api/analytics', (req, res) => {
 
 app.get('/api/blockchain', (req, res) => {
   res.json(BLOCKCHAIN);
+});
+
+// ============================================
+// 🚨 HACKATHON DEMO ENDPOINTS
+// ============================================
+
+// 1. Force Disaster Mode (The "Cheat Code")
+app.post('/api/force-disaster', async (req, res) => {
+  try {
+    const { region } = req.body;
+    console.log(`🚨 DEMO: Forcing disaster conditions for ${region || 'all'}...`);
+
+    // Fetch risk data with forceDisaster = true
+    // If region is specified, get that, otherwise get all high risk cities
+    let result;
+    if (region) {
+      result = await calculateRiskScore(region, true);
+    } else {
+      result = await fetchAllHighRiskCities(true);
+    }
+
+    // Emit socket event to show the spike immediately on dashboard
+    io.emit('force-disaster-alert', {
+      message: '⚠️ ANOMALY DETECTED: Sudden spike in atmospheric readings!',
+      data: result
+    });
+
+    res.json({ success: true, message: 'Disaster Forced', data: result });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to force disaster' });
+  }
+});
+
+// 2. Twilio SMS Integration (The "Last Mile" Demo)
+app.post('/api/alerts/sms', async (req, res) => {
+  const { phoneNumber, message } = req.body;
+
+  if (!phoneNumber || !message) {
+    return res.status(400).json({ error: 'Phone number and message required' });
+  }
+
+  // Demo Mode Logging
+  console.log(`📱 SENDING SMS to ${phoneNumber}: "${message}"`);
+
+  // Fallback if Twilio not configured
+  if (!twilioClient) {
+    console.warn('⚠️ Twilio not configured. Simulating SMS success.');
+
+    // Simulate network delay
+    setTimeout(() => {
+      res.json({
+        success: true,
+        sid: 'SM_MOCK_' + Math.random().toString(36).substring(7),
+        status: 'sent (simulated)'
+      });
+    }, 1500);
+    return;
+  }
+
+  try {
+    const messageResponse = await twilioClient.messages.create({
+      body: `[DisasterSync ALERT] ${message}`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phoneNumber
+    });
+
+    res.json({ success: true, sid: messageResponse.sid, status: messageResponse.status });
+  } catch (error) {
+    console.error('Twilio Error:', error);
+    res.status(500).json({ error: 'Failed to send SMS', details: error.message });
+  }
 });
 
 // ============================================

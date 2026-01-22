@@ -4,6 +4,16 @@ const User = require('./models/User'); // Mongoose Model
 
 // Secret key for JWT (in production, use environment variable)
 const JWT_SECRET = process.env.JWT_SECRET;
+
+// Validate JWT_SECRET exists
+if (!JWT_SECRET) {
+    console.error('❌ FATAL ERROR: JWT_SECRET is not defined in environment variables!');
+    console.error('   Please set JWT_SECRET in your .env file.');
+    console.error('   You can generate a secure key using:');
+    console.error('   node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+    process.exit(1);
+}
+
 const JWT_EXPIRES_IN = '24h';
 const REFRESH_EXPIRES_IN = '7d';
 

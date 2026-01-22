@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, ShieldCheck, Truck, Users, Activity, Bell, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ShieldCheck, Truck, Users, Activity, Bell, TrendingUp, Play } from 'lucide-react';
 import MapComponent from '../components/MapComponent';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { toast } from 'react-toastify';
@@ -7,13 +7,84 @@ import { format } from 'date-fns';
 import { API_URL } from '../utils/apiConfig';
 
 const Dashboard = () => {
-    const { predictions, resources, isConnected } = useWebSocket();
+    const { predictions, resources, isConnected, setPredictions, simulationTrigger } = useWebSocket();
     const [liveFeed, setLiveFeed] = useState([]);
     const [earthquakes, setEarthquakes] = useState([]);
     const [weather, setWeather] = useState(null);
     const [activeAlert, setActiveAlert] = useState(false);
+    const [isSimulating, setIsSimulating] = useState(false);
 
     const prediction = predictions && predictions.length > 0 ? predictions[0] : null;
+
+    useEffect(() => {
+        if (simulationTrigger) {
+            handleSimulate();
+        }
+    }, [simulationTrigger]);
+
+    const speak = (text, delay = 0) => {
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            utterance.pitch = 1;
+            window.speechSynthesis.speak(utterance);
+        }, delay);
+    };
+
+    const handleSimulate = () => {
+        if (isSimulating) return; // Prevent double trigger
+        setIsSimulating(true);
+        toast.info("🎙️ Starting System Tour & Simulation...");
+
+        // Stop any current speech
+        window.speechSynthesis.cancel();
+
+        // 1. System Tour Sequence
+        const tourSteps = [
+            { t: 0, msg: "Welcome to Disaster Sync Command Center. Initializing System Overview." },
+            { t: 4000, msg: "You are observing the Real-time Operations Dashboard, tracking live satellite feeds and weather anomalies." },
+            { t: 11000, msg: "Our AI Prediction Engine analyzes historic seismic and meteorological data to forecast threats with 98% accuracy." },
+            { t: 19000, msg: "The Resource Manager tracks nearby rescue units, hospitals, and logistical support in real-time." },
+            { t: 26000, msg: "The Alert System enables instant multi-channel dissemination to ground teams and civilians." },
+            { t: 33000, msg: "Initiating Live Simulation now... Attention. Anomaly detected in Northern Sector..." },
+            { t: 38000, msg: "Analyzing... Confirmed. Critical Flash Flood monitoring in Rishikesh." },
+            { t: 44000, msg: "Impact Assessment complete. 15,000 civilians at risk. Evacuation protocols recommended." }
+        ];
+
+        // Schedule Narration
+        tourSteps.forEach(step => speak(step.msg, step.t));
+
+        // 2. Clear current predictions
+        setPredictions([]);
+
+        // 3. Inject New Disaster aligned with narration (approx 38s in)
+        setTimeout(() => {
+            const simulatedDisaster = {
+                id: 999,
+                type: 'Flash Flood',
+                severity: 'Critical',
+                region: 'Rishikesh, Uttarakhand',
+                coordinates: [30.0869, 78.2676], // Rishikesh Coords
+                predictedTime: '45 Mins',
+                confidence: 98,
+                impactEstimate: '15,000 People at Risk',
+                radius: 12000,
+                aiModel: 'HydroNet-X',
+                evacuationZones: [
+                    { name: 'Ghat Area', priority: 'High', population: 5000 },
+                    { name: 'Market Rd', priority: 'High', population: 8000 }
+                ]
+            };
+            setPredictions([simulatedDisaster]);
+
+            toast.error(`⚠️ CRITICAL: Flash Flood detected in Rishikesh!`, {
+                position: "top-center",
+                autoClose: 8000,
+                theme: "dark",
+            });
+            setIsSimulating(false);
+        }, 38000); // Sync with "Confirmed..." message
+    };
 
     useEffect(() => {
         // HYBRID MODE: Fetch real earthquake data DIRECTLY from USGS (no backend needed)
@@ -25,7 +96,7 @@ const Dashboard = () => {
                     magnitude: eq.properties.mag,
                     place: eq.properties.place,
                     time: new Date(eq.properties.time),
-                    coordinates: eq.geometry.coordinates,
+                    coordinates: [eq.geometry.coordinates[1], eq.geometry.coordinates[0]], // Swap [lng, lat] to [lat, lng]
                     depth: eq.geometry.coordinates[2]
                 }));
                 setEarthquakes(quakes);
@@ -36,22 +107,9 @@ const Dashboard = () => {
         fetch('https://api.open-meteo.com/v1/forecast?latitude=28.61&longitude=77.20&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=Asia/Kolkata')
             .then(res => res.json())
             .then(data => {
-                const weatherCodes = {
-                    0: 'Clear', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
-                    45: 'Fog', 51: 'Drizzle', 61: 'Rain', 63: 'Moderate Rain',
-                    65: 'Heavy Rain', 80: 'Rain Showers', 95: 'Thunderstorm'
-                };
-                setWeather({
-                    temp: Math.round(data.current.temperature_2m),
-                    humidity: data.current.relative_humidity_2m,
-                    windSpeed: Math.round(data.current.wind_speed_10m),
-                    weather: weatherCodes[data.current.weather_code] || 'Clear'
-                });
+                setWeather(data.current);
             })
-            .catch(err => {
-                // Fallback mock weather
-                setWeather({ temp: 28, humidity: 65, windSpeed: 12, weather: 'Partly Cloudy' });
-            });
+            .catch(err => console.log('Using mock weather data'));
 
         // DEMO: Use mock live feed (already in WebSocketContext, but set local fallback)
         setLiveFeed([
@@ -60,6 +118,17 @@ const Dashboard = () => {
             { id: 3, time: new Date(Date.now() - 600000).toISOString(), source: 'USGS', message: 'Minor seismic activity detected near Himalayan region.', severity: 'low' }
         ]);
     }, []);
+
+    // Also update live feed
+    useEffect(() => {
+        if (prediction) {
+            setActiveAlert(true);
+            setLiveFeed(prev => [
+                { id: Date.now(), message: `CRITICAL ALERT: ${prediction.type} detected in ${prediction.region}`, type: 'alert', time: 'Just Now' },
+                ...prev
+            ]);
+        }
+    }, [prediction]);
 
     const handleSendAlert = async () => {
         if (!prediction) return;
@@ -159,99 +228,178 @@ const Dashboard = () => {
 
             {/* Right Side Control Panel */}
             <div className="control-panel glass-panel">
-                <h3>Command Center</h3>
+                <div className="panel-header" style={{ marginBottom: '1.5rem' }}>
+                    <h3>Command Center</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isConnected ? 'var(--accent-success)' : 'var(--accent-danger)' }}></span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{isConnected ? 'ONLINE' : 'OFFLINE'}</span>
+                    </div>
+                </div>
 
-                {prediction && (
-                    <div className="alert-box">
-                        <h4>⚠ {prediction.severity.toUpperCase()} ALERT</h4>
-                        <p style={{ marginBottom: '0.5rem' }}>
-                            <strong>{prediction.type}</strong> predicted in {prediction.region}
+                {/* Simulation Control */}
+                <div className="control-group">
+                    <label className="group-label">Simulation</label>
+                    <button
+                        className="btn btn-outline-danger full-width"
+                        style={{ justifyContent: 'space-between' }}
+                        onClick={async () => {
+                            try {
+                                toast.info("🚨 DEMO: Initiating Force Disaster Sequence...");
+                                await fetch(`${API_URL}/api/force-disaster`, { method: 'POST' });
+                            } catch (e) {
+                                toast.error("Failed to trigger disaster");
+                            }
+                        }}
+                        title="Trigger +50 wind speed anomaly"
+                    >
+                        <span>Trigger Emergency Scenario</span>
+                        <Play size={14} />
+                    </button>
+                </div>
+
+                {/* Alert/Status Display */}
+                {prediction ? (
+                    <div className="alert-box animate-pulse-glow" style={{ marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <h4>
+                                <AlertTriangle size={18} />
+                                {prediction.severity} Alert
+                            </h4>
+                            <span className="badge badge-danger">Active</span>
+                        </div>
+
+                        <p style={{ margin: '8px 0', fontSize: '1.1rem', fontWeight: '600' }}>
+                            {prediction.type} in {prediction.region}
                         </p>
-                        <div style={{
-                            fontSize: '0.85rem',
-                            color: 'var(--text-muted)',
-                            marginBottom: '0.75rem'
-                        }}>
-                            Model: {prediction.aiModel || 'AI-v3.2'} • Radius: {(prediction.radius / 1000).toFixed(1)}km
-                        </div>
-                        <div className="countdown">
-                            Impact in: <span style={{ color: getSeverityColor(prediction.severity) }}>{prediction.predictedTime}</span>
-                        </div>
 
-                        {prediction.evacuationZones && prediction.evacuationZones.length > 0 && (
-                            <div style={{
-                                marginTop: '1rem',
-                                padding: '0.75rem',
-                                background: 'rgba(255,255,255,0.03)',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem'
-                            }}>
-                                <div style={{ fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                                    Evacuation Zones:
-                                </div>
-                                {prediction.evacuationZones.map((zone, idx) => (
-                                    <div key={idx} style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        marginBottom: '0.25rem',
-                                        color: 'var(--text-secondary)'
-                                    }}>
-                                        <span>{zone.name} ({zone.priority})</span>
-                                        <span>{zone.population?.toLocaleString()} people</span>
-                                    </div>
-                                ))}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
+                                <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)' }}>IMPACT IN</span>
+                                <span style={{ fontWeight: '700', color: getSeverityColor(prediction.severity) }}>{prediction.predictedTime}</span>
                             </div>
-                        )}
+                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
+                                <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)' }}>CONFIDENCE</span>
+                                <span style={{ fontWeight: '700', color: 'var(--accent-success)' }}>{prediction.confidence}%</span>
+                            </div>
+                        </div>
 
                         <div className="action-buttons">
                             <button
-                                className={`btn ${activeAlert ? 'btn-primary' : 'btn-danger'}`}
+                                className={`btn ${activeAlert ? 'btn-primary' : 'btn-danger'} full-width`}
                                 onClick={handleSendAlert}
                                 disabled={activeAlert}
                             >
-                                {activeAlert ? 'Dispatching...' : '📢 Broadcast Evacuation Alert'}
+                                {activeAlert ? '✅ Protocols Activated' : '📢 Broadcast Evacuation Alert'}
                             </button>
-                            <button className="btn btn-primary" style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-color)' }}>
+                            
+                            <button
+                                className="btn btn-primary full-width"
+                                style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-color)', marginTop: '0.5rem' }}
+                                onClick={async () => {
+                                    if (!prediction) return;
+                                    
+                                    // Find first available resource
+                                    const availableResource = resources.find(r => r.status === 'Available');
+                                    
+                                    if (!availableResource) {
+                                        toast.warning("No resources currently available for dispatch.");
+                                        return;
+                                    }
+
+                                    toast.info(`🚁 Dispatching ${availableResource.type} to ${prediction.region}...`);
+                                    
+                                    try {
+                                        await fetch(`${API_URL}/api/resources/${availableResource.id}/dispatch`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                destination: prediction.region,
+                                                targetCoordinates: prediction.coordinates
+                                            })
+                                        });
+                                        toast.success("✅ Unit Deployed & En Route!");
+                                    } catch (e) {
+                                        console.error(e);
+                                        toast.error("Dispatch Failed");
+                                    }
+                                }}
+                            >
                                 <Activity size={18} /> Auto-Deploy Resources
                             </button>
                         </div>
                     </div>
-                )}
-
-                {!prediction && (
-                    <div style={{
-                        padding: '2rem',
-                        textAlign: 'center',
-                        background: 'rgba(16, 185, 129, 0.1)',
-                        border: '1px solid rgba(16, 185, 129, 0.2)',
-                        borderRadius: '12px'
-                    }}>
-                        <ShieldCheck size={48} style={{ color: 'var(--accent-success)', marginBottom: '1rem' }} />
-                        <h4 style={{ color: 'var(--accent-success)', marginBottom: '0.5rem' }}>All Clear</h4>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                            No immediate threats detected. AI monitoring continues.
-                        </p>
+                ) : (
+                    <div className="control-group">
+                        <div className="status-indicator">
+                            <ShieldCheck size={32} style={{ color: 'var(--accent-success)' }} />
+                            <div>
+                                <div style={{ color: 'var(--accent-success)', fontWeight: '600' }}>System Normal</div>
+                                <div style={{ fontSize: '0.8rem' }}>AI Monitoring Active</div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                <div className="feed-list">
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <TrendingUp size={16} />
-                        Live Activity Feed
-                    </h4>
-                    {liveFeed.map((item) => (
-                        <div key={item.id} className="feed-item">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                <span className="time">{item.time ? format(new Date(item.time), 'HH:mm') : 'Now'}</span>
-                                {item.severity && (
-                                    <span className={`badge badge-${item.severity === 'critical' ? 'danger' : item.severity === 'high' ? 'warning' : 'info'}`} style={{ fontSize: '0.7rem' }}>
-                                        {item.severity}
+                <div className="divider" style={{ margin: '1rem 0' }}></div>
+
+                {/* Communication Control */}
+                <div className="control-group">
+                    <label className="group-label">Last Mile Connectivity (Demo)</label>
+                    <div className="input-group">
+                        <input
+                            type="tel"
+                            placeholder="+91 Phone Number"
+                            id="citizen-phone"
+                            className="custom-input"
+                            style={{ fontSize: '0.9rem', padding: '8px 12px' }}
+                        />
+                        <button
+                            className="btn btn-primary"
+                            style={{ padding: '8px 16px' }}
+                            onClick={async () => {
+                                const phone = document.getElementById('citizen-phone').value;
+                                if (!phone) return toast.warning("Enter a phone number");
+
+                                toast.info(`📨 Sending Priority SMS to ${phone}...`);
+                                try {
+                                    await fetch(`${API_URL}/api/alerts/sms`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            phoneNumber: phone,
+                                            message: "CRITICAL: Flash Flood detected. Evacuate immediately to High Ground Zone A."
+                                        })
+                                    });
+                                    toast.success("✅ SMS Delivered");
+                                } catch (e) {
+                                    toast.error("SMS Failed");
+                                }
+                            }}
+                        >
+                            Send
+                        </button>
+                    </div>
+                </div>
+
+                {/* Activity Feed */}
+                <div className="feed-section compact-feed">
+                    <div className="feed-header">
+                        <Activity size={14} />
+                        <span>Live Activity Feed</span>
+                    </div>
+                    <div className="scrollable" style={{ flex: 1 }}>
+                        {liveFeed.map((item) => (
+                            <div key={item.id} className="feed-item">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                    <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{item.source}</span>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+                                        {item.time === 'Just Now' ? 'Just Now' : (item.time ? format(new Date(item.time), 'HH:mm') : 'Now')}
                                     </span>
-                                )}
+                                </div>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>{item.message}</p>
                             </div>
-                            <p><strong>{item.source}:</strong> {item.message}</p>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
 

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Truck, Plane, Home, Fuel, Users, MapPin, Activity, Send } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { toast } from 'react-toastify';
+import { API_URL } from '../utils/apiConfig';
 
 const ResourceCenter = () => {
-    const { resources, isConnected } = useWebSocket();
+    const { resources, isConnected, predictions } = useWebSocket();
     const [filter, setFilter] = useState('all');
 
     const getResourceIcon = (type) => {
@@ -40,16 +41,25 @@ const ResourceCenter = () => {
     };
 
     const handleDispatch = async (resourceId) => {
+        let destination = 'Emergency Zone';
+        let targetCoordinates = [30.0869, 78.2676]; // Rishikesh Default
+
+        if (predictions && predictions.length > 0) {
+            const activeAlert = predictions[0];
+            destination = activeAlert.region;
+            targetCoordinates = activeAlert.coordinates;
+        }
+
         try {
             const res = await fetch(`${API_URL}/api/resources/${resourceId}/dispatch`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ destination: 'Emergency Zone' })
+                body: JSON.stringify({ destination, targetCoordinates })
             });
 
             const data = await res.json();
             if (data.success) {
-                toast.success(`${data.resource.type} dispatched successfully!`);
+                toast.success(`${data.resource.type} dispatched to ${destination}!`);
             }
         } catch (err) {
             toast.error('Failed to dispatch resource');

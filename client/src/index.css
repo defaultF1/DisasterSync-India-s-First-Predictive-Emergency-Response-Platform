@@ -266,7 +266,7 @@ h6 {
   font-weight: 700;
   color: var(--accent-primary);
   margin-bottom: 0.5rem;
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   white-space: nowrap;
 }
 
@@ -553,6 +553,32 @@ h6 {
 
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* WAR ROOM VISUALS - High Risk Marker Pulse */
+.pulse {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 0, 0, 0.5);
+  cursor: pointer;
+  box-shadow: 0 0 0 rgba(255, 0, 0, 0.4);
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 20px rgba(255, 0, 0, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+  }
 }
 
 /* Spin Animation */
@@ -1197,4 +1223,93 @@ html {
 /* Improved tap highlighting */
 * {
   -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
+}
+
+/* --- Dashboard Decluttering Utilities --- */
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.group-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.btn-outline:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.btn-outline-danger {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--accent-danger);
+}
+
+.btn-outline-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--accent-danger);
+}
+
+.full-width {
+  width: 100%;
+}
+
+.feed-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  margin-top: 1rem;
+}
+
+.feed-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.compact-feed .feed-item {
+  padding: 10px 0;
+  font-size: 0.85rem;
+}
+
+.status-indicator {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px dashed rgba(16, 185, 129, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }

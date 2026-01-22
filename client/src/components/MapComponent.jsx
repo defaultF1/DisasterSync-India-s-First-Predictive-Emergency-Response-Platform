@@ -12,82 +12,112 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom icon creator based on resource type
-const createCustomIcon = (type, status) => {
-    const colors = {
-        'Available': '#10b981',
-        'Busy': '#f59e0b',
-        'In Transit': '#3b82f6',
-        'Refueling': '#f59e0b',
-        'Open': '#10b981'
-    };
+// Remove old createCustomIcon function as we are now using inline divIcons in the render
 
-    const icons = {
-        'Rescue Boat': '🚤',
-        'Rescue Helicopter': '🚁',
-        'Ambulance': '🚑',
-        'Supply Truck': '🚚',
-        'Shelter': '🏠'
-    };
+// --- WAR ROOM VISUALS: Custom Icons & Pulse Animation ---
 
-    const color = colors[status] || '#94a3b8';
-    const emoji = icons[type] || '📍';
+const getAgencyIcon = (type) => {
+    let color = '#3b82f6'; // Default Blue
+    let emoji = '🚛';
+
+    if (type.includes('Ambulance')) {
+        color = '#ef4444'; // Red
+        emoji = '🚑';
+    } else if (type.includes('Police')) {
+        color = '#3b82f6'; // Blue
+        emoji = '🚓';
+    } else if (type.includes('NDRF')) {
+        color = '#f97316'; // Orange
+        emoji = '🧑‍🚒';
+    } else if (type.includes('Helicopter')) {
+        color = '#10b981'; // Green
+        emoji = '🚁';
+    }
 
     return L.divIcon({
-        className: 'custom-marker',
-        html: `
-      <div style="
-        background: ${color};
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      ">
-        ${emoji}
-      </div>
-    `,
+        className: 'custom-agency-icon',
+        html: `<div style="
+                background-color: ${color};
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid white;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                font-size: 16px;
+                transition: all 0.3s ease;
+            ">${emoji}</div>`,
         iconSize: [32, 32],
         iconAnchor: [16, 16],
         popupAnchor: [0, -16]
     });
 };
 
+const disasterIcon = L.divIcon({
+    className: 'pulse-marker', // Pulse animation container
+    html: '<div class="pulse"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+});
+
+const earthquakeIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+
+// Helper to auto-center map when props change
+const ChangeView = ({ center, zoom }) => {
+    const map = useMap();
+    L.Icon.Default.prototype._getIconUrl = null; // Ensure this runs once
+
+    React.useEffect(() => {
+        map.flyTo(center, zoom, {
+            duration: 2 // smooth animation duration 2 seconds
+        });
+    }, [center, zoom, map]);
+
+    return null;
+};
+
 const MapComponent = ({ resources = [], disaster, earthquakes = [] }) => {
-    // Auto-center logic:
-    // 1. If disaster prediction exists, focus there.
-    // 2. If recent earthquakes exist, focus on the strongest one.
-    // 3. Default to India center or Delhi.
+    // Map ALWAYS centers on India by default.
+    // Only move if there's an active disaster prediction with coordinates within India.
 
     let position = [22.5937, 78.9629]; // Center of India
     let zoomLevel = 5;
 
+    // Only fly to disaster if it's in India (approximate bounding box check)
     if (disaster && disaster.coordinates) {
-        position = disaster.coordinates;
-        zoomLevel = 6;
-    } else if (earthquakes && earthquakes.length > 0) {
-        // Find strongest quake
-        const strongest = earthquakes.reduce((prev, current) => (prev.magnitude > current.magnitude) ? prev : current);
-        if (strongest.coordinates) {
-            position = strongest.coordinates;
-            zoomLevel = 5;
+        const [lat, lng] = disaster.coordinates;
+        const isInIndia = lat >= 6 && lat <= 37 && lng >= 68 && lng <= 98;
+        if (isInIndia) {
+            position = disaster.coordinates;
+            zoomLevel = 7;
         }
     }
+    // Note: We do NOT auto-center on USGS earthquakes as they are mostly outside India.
 
     return (
         <MapContainer
             center={position}
             zoom={zoomLevel}
-            style={{ height: '100%', width: '100%', borderRadius: '16px', zIndex: 1 }}
+            minZoom={3} // Prevent zooming out to see infinite worlds
+            maxBounds={[[-90, -180], [90, 180]]} // Restrict view to the world
+            maxBoundsViscosity={1.0} // Hard stop at bounds
+            style={{ height: '100%', width: '100%', borderRadius: '16px', zIndex: 1, background: '#242424' }} // Dark background to hide tile gaps
         >
+            <ChangeView center={position} zoom={zoomLevel} />
             {/* Dark themed map tiles */}
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
+                noWrap={true} // Prevent tile repetition
             />
 
             {/* Official India Boundary Overlay */}
@@ -103,44 +133,33 @@ const MapComponent = ({ resources = [], disaster, earthquakes = [] }) => {
                 interactive={false}
             />
 
-            {/* Region Labels */}
-            <Marker position={[33.2, 75.5]} icon={L.divIcon({
-                className: 'region-label',
-                html: '<div style="color: #fbbf24; font-weight: bold; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); width: 150px; text-align: center;">UT of Jammu & Kashmir</div>',
-                iconSize: [150, 20],
-                iconAnchor: [75, 10]
-            })} />
+            <style>{`
+                @keyframes pulse-ring {
+                    0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+                    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+                    100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                }
+                .pulse-icon {
+                    animation: pulse-ring 2s infinite;
+                }
+            `}</style>
 
-            <Marker position={[34.5, 77.6]} icon={L.divIcon({
-                className: 'region-label',
-                html: '<div style="color: #fbbf24; font-weight: bold; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); width: 150px; text-align: center;">UT of Ladakh</div>',
-                iconSize: [150, 20],
-                iconAnchor: [75, 10]
-            })} />
+            {/* Region Labels REMOVED for cleaner look */}
 
-            {/* Major Cities Markers */}
+            {/* Major Cities - Simplified Dots */}
             {[
-                { name: 'Srinagar', pos: [34.0837, 74.7973] },
-                { name: 'Leh', pos: [34.1526, 77.5770] },
                 { name: 'New Delhi', pos: [28.6139, 77.2090] },
                 { name: 'Mumbai', pos: [19.0760, 72.8777] },
-                { name: 'Chennai', pos: [13.0827, 80.2707] },
-                { name: 'Kolkata', pos: [22.5726, 88.3639] },
                 { name: 'Bengaluru', pos: [12.9716, 77.5946] }
             ].map((city, idx) => (
                 <Marker
                     key={`city-${idx}`}
                     position={city.pos}
                     icon={L.divIcon({
-                        className: 'city-marker',
-                        html: `
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <div style="width: 6px; height: 6px; background: white; border-radius: 50%; border: 1px solid #64748b;"></div>
-                                <div style="color: #94a3b8; font-size: 10px; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.9); white-space: nowrap;">${city.name}</div>
-                            </div>
-                        `,
-                        iconSize: [100, 40],
-                        iconAnchor: [50, 6]
+                        className: 'city-dot',
+                        html: `<div style="width: 8px; height: 8px; background: rgba(255,255,255,0.5); border-radius: 50%;"></div>`,
+                        iconSize: [10, 10],
+                        iconAnchor: [5, 5]
                     })}
                 />
             ))}
@@ -201,6 +220,17 @@ const MapComponent = ({ resources = [], disaster, earthquakes = [] }) => {
             {/* Original Disaster Prediction Visualization (if exists) */}
             {disaster && disaster.coordinates && (
                 <>
+                    {/* PULSING RADAR EFFECT */}
+                    <Marker
+                        position={disaster.coordinates}
+                        icon={L.divIcon({
+                            className: 'leaflet-pulse-marker', // Empty or standard class to avoid style conflict
+                            html: '<div class="pulse-icon" style="width: 100%; height: 100%; border-radius: 50%; background: rgba(239, 68, 68, 0.4);"></div>',
+                            iconSize: [40, 40],
+                            iconAnchor: [20, 20]
+                        })}
+                    />
+
                     <Circle
                         center={disaster.coordinates}
                         pathOptions={{
@@ -253,7 +283,7 @@ const MapComponent = ({ resources = [], disaster, earthquakes = [] }) => {
                 <Marker
                     key={res.id}
                     position={[res.lat, res.lng]}
-                    icon={createCustomIcon(res.type, res.status)}
+                    icon={getAgencyIcon(res.type)}
                 >
                     <Popup className="custom-popup">
                         <div style={{ padding: '4px', minWidth: '180px' }}>

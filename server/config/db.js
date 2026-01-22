@@ -1,12 +1,17 @@
 const mongoose = require('mongoose');
 
-// Default to a placeholder if env var is missing (User must provide this!)
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://akashstudy21_db_user:JhJGKgUNhcZkWt4b@default.ebjnkbp.mongodb.net/?retryWrites=true&w=majority&appName=DEFAULT';
+// MongoDB connection string from environment variable
+const MONGO_URI = process.env.MONGO_URI;
 
 const connectDB = async () => {
     try {
-        if (!process.env.MONGO_URI) {
-            console.log('⚠️  MONGO_URI not found in env. Using default connection string.');
+        if (!MONGO_URI) {
+            console.log('⚠️  WARNING: MONGO_URI not found in environment variables.');
+            console.log('   The application will run in SIMULATION MODE (no database).');
+            console.log('   To enable database features:');
+            console.log('   1. Copy .env.example to .env');
+            console.log('   2. Add your MongoDB connection string to MONGO_URI');
+            return;
         }
 
         const conn = await mongoose.connect(MONGO_URI, {
@@ -16,7 +21,8 @@ const connectDB = async () => {
         console.log(`\n🍃 MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
         console.error(`\n❌ MongoDB Connection Error: ${error.message}`);
-        console.log('   Please set a valid MONGO_URI in your environment variables.');
+        console.log('   The application will continue in SIMULATION MODE.');
+        console.log('   Please check your MONGO_URI in the .env file.');
         // Don't exit process so the app can still run in "Simulated Mode" if DB fails
         // process.exit(1); 
     }

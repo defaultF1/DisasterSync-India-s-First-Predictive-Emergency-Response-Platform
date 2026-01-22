@@ -118,13 +118,25 @@ export const WebSocketProvider = ({ children }) => {
         };
     }, []);
 
+    const [simulationTrigger, setSimulationTrigger] = useState(false);
+
+    const triggerSimulation = () => {
+        setSimulationTrigger(true);
+        // Auto-reset after a moment so it can be re-triggered
+        setTimeout(() => setSimulationTrigger(false), 1000);
+    };
+
     const value = {
         socket,
         isConnected,
         predictions,
+        setPredictions, // Expose for Simulation Mode
         resources,
+        setResources,   // Expose for Simulation Mode
         agencies,
-        feed
+        feed,
+        simulationTrigger,
+        triggerSimulation
     };
 
     return (

@@ -3,8 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { API_URL } from '../utils/apiConfig';
+import { useAuth } from '../contexts/AuthContext';
+
+// Force refresh
 
 const Login = () => {
+    const { login } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -31,10 +35,8 @@ const Login = () => {
                 throw new Error(data.error || 'Login failed');
             }
 
-            // Store tokens in localStorage
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            // Use context login method
+            login(data.user, data.accessToken, data.refreshToken);
 
             toast.success(`Welcome, ${data.user.name}!`, { autoClose: 2000 });
             navigate('/dashboard');
@@ -50,9 +52,7 @@ const Login = () => {
                 agency: 'NDRF'
             };
 
-            localStorage.setItem('accessToken', 'demo-access-token');
-            localStorage.setItem('refreshToken', 'demo-refresh-token');
-            localStorage.setItem('user', JSON.stringify(demoUser));
+            login(demoUser, 'demo-access-token', 'demo-refresh-token');
 
             toast.success('Welcome back, Demo Admin!', { autoClose: 2000 });
             navigate('/dashboard');
