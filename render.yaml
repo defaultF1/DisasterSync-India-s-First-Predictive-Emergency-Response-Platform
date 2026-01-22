@@ -1,0 +1,65 @@
+services:
+  # ---------------------------------------------------
+  # 1. Backend Service (Node.js)
+  # ---------------------------------------------------
+  - type: web
+    name: disastersync-server
+    env: node
+    region: singapore # Closest to India for lower latency
+    plan: free        # Can upgrade to starter/standard later
+    
+    # Deployment Settings
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    
+    # Environment Variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false   # You will be prompted to enter this SECURELY in Dashboard
+      - key: JWT_SECRET
+        generateValue: true # Auto-generates a strong secret for you!
+      - key: FRONTEND_URL
+        fromService:
+          type: static
+          name: disastersync-client
+          property: url
+      
+      # Admin Credentials (Prompts you to enter them)
+      - key: ADMIN_EMAIL
+        value: admin@ndrf.gov.in
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: COMMANDER_EMAIL
+        value: commander@police.gov.in
+      - key: COMMANDER_PASSWORD
+        sync: false
+
+  # ---------------------------------------------------
+  # 2. Frontend Service (React Static Site)
+  # ---------------------------------------------------
+  - type: static
+    name: disastersync-client
+    env: static
+    region: singapore
+    plan: free
+    
+    # Deployment Settings
+    rootDir: client
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    
+    # Environment Variables
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: disastersync-server
+          property: url
+
+# Optional: MongoDB Database (if you want Render-managed DB instead of Atlas)
+# databases:
+#   - name: disastersync-db
+#     plan: free
