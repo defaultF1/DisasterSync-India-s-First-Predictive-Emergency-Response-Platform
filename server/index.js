@@ -8,6 +8,17 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db'); // DB Config
 
+// Input Validation
+const {
+  registerValidation,
+  loginValidation,
+  alertValidation,
+  smsValidation,
+  dispatchValidation,
+  regionValidation,
+  citizenReportValidation
+} = require('./validation');
+
 // Auth Module
 const {
   ROLES,
@@ -42,9 +53,14 @@ const server = http.createServer(app);
 // Connect to Database
 connectDB();
 
+// Secure Socket.io CORS - never use '*' in production
+const socketAllowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000']
+  : ['http://localhost:5173', 'http://localhost:3000']; // Dev-only defaults
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || '*',
+    origin: socketAllowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -67,17 +83,25 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Production-ready CORS configuration
+// Production-ready CORS configuration - NEVER use '*'
+// If FRONTEND_URL is not set, only allow localhost origins (dev mode)
 const allowedOrigins = process.env.FRONTEND_URL
   ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000']
-  : '*';
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
+if (!process.env.FRONTEND_URL) {
+  console.warn('⚠️  FRONTEND_URL not set. CORS restricted to localhost only.');
+}
 
 app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
-app.use(express.json());
+
+// Request size limits to prevent DoS attacks
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // --- Enhanced Mock Data ---
 
@@ -218,20 +242,15 @@ const ANALYTICS_DATA = {
   agenciesCoordinated: 17
 };
 
-// --- Blockchain Simulation ---
-const BLOCKCHAIN = [];
 
+// --- Enhanced Local Blockchain ---
+const blockchainService = require('./blockchainService');
+
+// Legacy wrapper for compatibility
 function addToBlockchain(type, data) {
-  const block = {
-    id: uuidv4(),
-    type,
-    data,
-    timestamp: new Date(),
-    hash: `0x${Math.random().toString(16).substring(2, 18)}`
-  };
-  BLOCKCHAIN.push(block);
-  return block;
+  return blockchainService.addBlock(type, data);
 }
+
 
 // --- WebSocket Real-time Updates ---
 io.on('connection', (socket) => {
@@ -342,7 +361,7 @@ app.get('/api/resources', (req, res) => {
   res.json(RESOURCES);
 });
 
-app.post('/api/resources/:id/dispatch', (req, res) => {
+app.post('/api/resources/:id/dispatch', dispatchValidation, (req, res) => {
   const { destination, targetCoordinates } = req.body;
   const resource = RESOURCES.find(r => r.id === req.params.id);
 
@@ -374,7 +393,7 @@ app.get('/api/agencies', (req, res) => {
   res.json(AGENCIES);
 });
 
-app.post('/api/alerts', (req, res) => {
+app.post('/api/alerts', alertValidation, (req, res) => {
   const { type, message, target, channels, region } = req.body;
   const newAlert = {
     id: uuidv4(),
@@ -419,7 +438,18 @@ app.get('/api/analytics', (req, res) => {
 });
 
 app.get('/api/blockchain', (req, res) => {
-  res.json(BLOCKCHAIN);
+  res.json(blockchainService.getChain());
+});
+
+// Blockchain verification endpoint
+app.get('/api/blockchain/verify', (req, res) => {
+  const result = blockchainService.verifyChain();
+  res.json(result);
+});
+
+// Blockchain statistics
+app.get('/api/blockchain/stats', (req, res) => {
+  res.json(blockchainService.getStats());
 });
 
 // ============================================
@@ -454,12 +484,8 @@ app.post('/api/force-disaster', async (req, res) => {
 });
 
 // 2. Twilio SMS Integration (The "Last Mile" Demo)
-app.post('/api/alerts/sms', async (req, res) => {
+app.post('/api/alerts/sms', smsValidation, async (req, res) => {
   const { phoneNumber, message } = req.body;
-
-  if (!phoneNumber || !message) {
-    return res.status(400).json({ error: 'Phone number and message required' });
-  }
 
   // Demo Mode Logging
   console.log(`📱 SENDING SMS to ${phoneNumber}: "${message}"`);
@@ -623,7 +649,7 @@ app.get('/api/feed', (req, res) => {
 });
 
 // Citizen reports endpoint
-app.post('/api/citizen-report', (req, res) => {
+app.post('/api/citizen-report', citizenReportValidation, (req, res) => {
   const report = {
     id: uuidv4(),
     ...req.body,
@@ -642,13 +668,9 @@ app.post('/api/citizen-report', (req, res) => {
 // ============================================
 
 // Register new user
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', registerValidation, async (req, res) => {
   try {
     const { email, password, name, role, agency } = req.body;
-
-    if (!email || !password || !name) {
-      return res.status(400).json({ error: 'Email, password, and name are required.' });
-    }
 
     const user = await registerUser({ email, password, name, role, agency });
     res.status(201).json({ success: true, user });
@@ -658,13 +680,9 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginValidation, async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required.' });
-    }
 
     const result = await loginUser(email, password);
     res.json({ success: true, ...result });

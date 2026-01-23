@@ -336,7 +336,7 @@ const LandingPage = () => {
 
                     <div className="feature-card">
                         <Shield size={40} color="var(--accent-primary)" style={{ marginBottom: '1.5rem' }} />
-                        <h3>Blockchain Audit</h3>
+                        <h3>Audit Trail</h3>
                         <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.6' }}>
                             Immutable records of every alert and dispatch for transparency and insurance claims.
                         </p>

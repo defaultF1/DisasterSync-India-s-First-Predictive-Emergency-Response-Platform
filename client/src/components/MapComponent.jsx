@@ -110,7 +110,7 @@ const MapComponent = ({ resources = [], disaster, earthquakes = [] }) => {
             minZoom={3} // Prevent zooming out to see infinite worlds
             maxBounds={[[-90, -180], [90, 180]]} // Restrict view to the world
             maxBoundsViscosity={1.0} // Hard stop at bounds
-            style={{ height: '100%', width: '100%', borderRadius: '16px', zIndex: 1, background: '#242424' }} // Dark background to hide tile gaps
+            style={{ height: '100%', width: '100%', borderRadius: '16px', zIndex: 1, background: '#000000' }} // Dark background to hide tile gaps
         >
             <ChangeView center={position} zoom={zoomLevel} />
             {/* Dark themed map tiles */}

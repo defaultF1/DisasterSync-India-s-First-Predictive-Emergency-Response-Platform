@@ -13,6 +13,7 @@ import Analytics from './pages/Analytics';
 import AlertManagement from './pages/AlertManagement';
 import ResourceCenter from './pages/ResourceCenter';
 import HelpCenter from './pages/HelpCenter';
+import AuditTrail from './pages/AuditTrail';
 import Sidebar from './components/Sidebar';
 
 function DashboardLayout() {
@@ -25,6 +26,7 @@ function DashboardLayout() {
     if (path.includes('/analytics')) return 'analytics';
     if (path.includes('/alerts')) return 'alerts';
     if (path.includes('/resources')) return 'resources';
+    if (path.includes('/audit-trail')) return 'audit-trail';
     return 'dashboard';
   };
 
@@ -60,6 +62,7 @@ function DashboardLayout() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/alerts" element={<AlertManagement />} />
             <Route path="/resources" element={<ResourceCenter />} />
+            <Route path="/audit-trail" element={<AuditTrail />} />
             <Route path="/help" element={<HelpCenter />} />
           </Routes>
         </div>

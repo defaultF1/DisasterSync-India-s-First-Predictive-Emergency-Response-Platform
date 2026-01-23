@@ -1,0 +1,50 @@
+[
+  {
+    "id": "genesis",
+    "index": 0,
+    "type": "GENESIS",
+    "data": {
+      "message": "DisasterSync Blockchain Initialized"
+    },
+    "timestamp": "2026-01-23T14:01:46.489Z",
+    "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "hash": "746395e3a6cdd8fc4db268e2f2771b872d751696bbe35b69b77296db10e4fa55"
+  },
+  {
+    "id": "dc28850d-d220-4933-8f10-253331902606",
+    "index": 1,
+    "type": "RESOURCE_DISPATCH",
+    "data": {
+      "resourceId": "boat_1",
+      "destination": "Rishikesh, Uttarakhand",
+      "timestamp": "2026-01-23T14:04:47.943Z"
+    },
+    "timestamp": "2026-01-23T14:04:47.992Z",
+    "previousHash": "746395e3a6cdd8fc4db268e2f2771b872d751696bbe35b69b77296db10e4fa55",
+    "hash": "ebea9d88862adcf55989ef4e8ac9c53184f0670c533452b1fecafe3647ab38a2"
+  },
+  {
+    "id": "b507b5d6-5600-4a30-9cb2-45a1a4278be8",
+    "index": 2,
+    "type": "ALERT_DISPATCHED",
+    "data": {
+      "id": "5b81b76f-ec81-477a-9384-001bc13f6cd3",
+      "type": "warning",
+      "message": "jgcc",
+      "channels": [
+        "SMS"
+      ],
+      "region": "hjcch",
+      "timestamp": "2026-01-23T14:08:41.007Z",
+      "status": "Dispatched",
+      "deliveryStats": {
+        "sent": 14672,
+        "delivered": 0,
+        "failed": 0
+      }
+    },
+    "timestamp": "2026-01-23T14:08:41.007Z",
+    "previousHash": "ebea9d88862adcf55989ef4e8ac9c53184f0670c533452b1fecafe3647ab38a2",
+    "hash": "60592869820c6f07862aecfa2c3157788595e0f6aae75f21fbe0d8b9e96e5ab1"
+  }
+]

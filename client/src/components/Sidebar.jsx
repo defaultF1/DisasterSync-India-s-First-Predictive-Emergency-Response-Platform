@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Siren, Activity, LogOut, BarChart3, Truck, User, HelpCircle, Play, X } from 'lucide-react';
+import { LayoutDashboard, Siren, Activity, LogOut, BarChart3, Truck, User, HelpCircle, Play, X, Database } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { toast } from 'react-toastify';
@@ -16,6 +16,7 @@ const Sidebar = () => {
         if (path.includes('/analytics')) return 'analytics';
         if (path.includes('/alerts')) return 'alerts';
         if (path.includes('/resources')) return 'resources';
+        if (path.includes('/audit-trail')) return 'audit-trail';
         if (path.includes('/help')) return 'help';
         return 'dashboard';
     };
@@ -51,6 +52,10 @@ const Sidebar = () => {
                 <button className={`nav-item ${activeTab === 'resources' ? 'active' : ''}`} onClick={() => navigate('/dashboard/resources')}>
                     <Truck size={20} />
                     <span>Resources</span>
+                </button>
+                <button className={`nav-item ${activeTab === 'audit-trail' ? 'active' : ''}`} onClick={() => navigate('/dashboard/audit-trail')}>
+                    <Database size={20} />
+                    <span>Audit Trail</span>
                 </button>
             </div>
 
