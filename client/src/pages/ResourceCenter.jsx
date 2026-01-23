@@ -57,12 +57,21 @@ const ResourceCenter = () => {
                 body: JSON.stringify({ destination, targetCoordinates })
             });
 
+            if (!res.ok) {
+                // HTTP error (404, 500, etc.)
+                throw new Error(`Server error: ${res.status}`);
+            }
+
             const data = await res.json();
             if (data.success) {
                 toast.success(`${data.resource.type} dispatched to ${destination}!`);
+            } else {
+                toast.error(data.message || 'Failed to dispatch resource');
             }
         } catch (err) {
-            toast.error('Failed to dispatch resource');
+            console.error('Dispatch error:', err);
+            // Backend might be offline - show more helpful message
+            toast.error('Cannot dispatch: Backend server offline. Please start the server.');
         }
     };
 
