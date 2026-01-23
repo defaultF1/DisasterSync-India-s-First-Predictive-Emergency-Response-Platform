@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { API_URL } from '../utils/apiConfig';
+import {
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase/config';
 
 const AuthContext = createContext(null);
 
@@ -17,62 +22,63 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    // Check for existing token on mount
     useEffect(() => {
-        const checkAuth = async () => {
-            const token = localStorage.getItem('accessToken');
-            const storedUser = localStorage.getItem('user');
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                // For hackathon/demo, create a default profile if one doesn't exist
+                const userRef = doc(db, "users", firebaseUser.uid);
+                const userSnap = await getDoc(userRef);
 
-            if (token && storedUser) {
-                try {
-                    // Verify token is still valid
-                    const response = await fetch(`${API_URL}/api/auth/me`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
+                let userData;
 
-                    if (response.ok) {
-                        setUser(JSON.parse(storedUser));
-                        setIsAuthenticated(true);
-                    } else {
-                        // Token invalid, clear storage
-                        logout();
-                    }
-                } catch (error) {
-                    console.error('Auth check failed:', error);
-                    // Keep user logged in if server is unreachable (for demo)
-                    setUser(JSON.parse(storedUser));
-                    setIsAuthenticated(true);
+                if (userSnap.exists()) {
+                    userData = { uid: firebaseUser.uid, ...userSnap.data() };
+                } else {
+                    // Default profile for new users
+                    userData = {
+                        uid: firebaseUser.uid,
+                        name: firebaseUser.displayName || 'Rescue Officer',
+                        email: firebaseUser.email,
+                        role: 'admin',
+                        agency: 'NDRF'
+                    };
+                    // Save to Firestore
+                    await setDoc(userRef, userData);
                 }
+
+                setUser(userData);
+                setIsAuthenticated(true);
+            } else {
+                setUser(null);
+                setIsAuthenticated(false);
             }
             setLoading(false);
-        };
+        });
 
-        checkAuth();
+        return unsubscribe;
     }, []);
 
-    const login = (userData, accessToken, refreshToken) => {
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
-        setIsAuthenticated(true);
+    const login = async (email, password) => {
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            return { success: true, user: userCredential.user };
+        } catch (error) {
+            console.error('Login failed:', error);
+            throw error;
+        }
     };
 
-    const logout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        setUser(null);
-        setIsAuthenticated(false);
+    const logout = async () => {
+        try {
+            await signOut(auth);
+            setUser(null);
+            setIsAuthenticated(false);
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
     };
 
-    const getToken = () => {
-        return localStorage.getItem('accessToken');
-    };
-
-    // Check if user has required role
+    // Kept for compatibility with existing components
     const hasRole = (requiredRoles) => {
         if (!user) return false;
         if (Array.isArray(requiredRoles)) {
@@ -87,13 +93,12 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         login,
         logout,
-        getToken,
         hasRole
     };
 
     return (
         <AuthContext.Provider value={value}>
-            {children}
+            {!loading && children}
         </AuthContext.Provider>
     );
 };

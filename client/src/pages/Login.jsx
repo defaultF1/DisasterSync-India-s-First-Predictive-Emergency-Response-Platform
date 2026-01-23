@@ -23,39 +23,13 @@ const Login = () => {
         setError('');
 
         try {
-            const response = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(credentials)
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Login failed');
-            }
-
-            // Use context login method
-            login(data.user, data.accessToken, data.refreshToken);
-
-            toast.success(`Welcome, ${data.user.name}!`, { autoClose: 2000 });
+            await login(credentials.email, credentials.password);
+            toast.success('Welcome back!');
             navigate('/dashboard');
         } catch (err) {
-            console.warn('Backend unavailable, switching to Demo Mode:', err);
-
-            // DEMO FALLBACK
-            const demoUser = {
-                id: 'demo-admin-id',
-                name: 'Demo Admin',
-                email: 'admin@ndrf.in',
-                role: 'admin',
-                agency: 'NDRF'
-            };
-
-            login(demoUser, 'demo-access-token', 'demo-refresh-token');
-
-            toast.success('Welcome back, Demo Admin!', { autoClose: 2000 });
-            navigate('/dashboard');
+            console.error(err);
+            setError('Failed to log in. Please check credentials.');
+            toast.error('Authentication failed');
         } finally {
             setLoading(false);
         }
