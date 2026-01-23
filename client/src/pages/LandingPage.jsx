@@ -9,18 +9,19 @@ const LandingPage = () => {
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
             {/* Navigation */}
-            <nav style={{ padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'fixed', width: '100%', top: 0, zIndex: 100, backdropFilter: 'blur(10px)', borderBottom: 'var(--glass-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold', fontSize: '1.25rem', fontFamily: 'var(--font-heading)' }}>
-                    <Activity color="var(--accent-primary)" size={24} />
+            {/* Navigation */}
+            <nav className="nav-glass" style={{ padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'fixed', width: '100%', top: 0, zIndex: 100 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold', fontSize: '1.5rem', fontFamily: 'var(--font-heading)', letterSpacing: '-0.5px' }}>
+                    <Activity color="var(--accent-primary)" size={28} />
                     DisasterSync
                 </div>
-                <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', fontSize: '0.95rem' }}>
+                <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'center', fontSize: '0.95rem', fontWeight: '500' }}>
                     <a href="#about" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s' }}>About</a>
                     <a href="#features" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s' }}>Features</a>
                     <a href="#impact" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s' }}>Impact</a>
                     <button
                         className="btn btn-primary"
-                        style={{ padding: '8px 20px', fontSize: '0.9rem' }}
+                        style={{ padding: '10px 24px', fontSize: '0.95rem' }}
                         onClick={() => navigate('/login')}
                     >
                         Government Login
@@ -33,24 +34,14 @@ const LandingPage = () => {
                 <div className="hero-bg"></div>
                 <div className="hero-content">
                     <div className="animate-slide-up ">
-                        <span style={{
-                            background: 'rgba(59, 130, 246, 0.1)',
-                            color: 'var(--accent-primary)',
-                            padding: '6px 16px',
-                            borderRadius: '50px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            border: '1px solid rgba(59, 130, 246, 0.2)',
-                            marginBottom: '24px',
-                            display: 'inline-block'
-                        }}>
+                        <span className="premium-pill">
                             🚀 Revolutionizing Disaster Response
                         </span>
                     </div>
 
                     <h1 className="hero-title animate-slide-up delay-100">
                         Predict. Prepare. <br />
-                        <span style={{ color: 'var(--accent-primary)', WebkitTextFillColor: 'var(--accent-primary)' }}>Protect Lives.</span>
+                        <span className="text-gradient-primary">Protect Lives.</span>
                     </h1>
 
                     <p className="hero-subtitle animate-slide-up delay-200">
@@ -58,17 +49,17 @@ const LandingPage = () => {
                         Unifying 17+ agencies on one blockchain-secure dashboard.
                     </p>
 
-                    <div className="animate-slide-up delay-300" style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                    <div className="animate-slide-up delay-300" style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
                         <button
                             className="btn btn-primary"
-                            style={{ padding: '16px 32px', fontSize: '1.1rem' }}
+                            style={{ padding: '18px 40px', fontSize: '1.15rem' }}
                             onClick={() => navigate('/login')}
                         >
                             Open Command Center <ChevronRight size={20} />
                         </button>
                         <button
-                            className="btn"
-                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '16px 32px', fontSize: '1.1rem', color: 'white' }}
+                            className="btn btn-glass"
+                            style={{ padding: '18px 40px', fontSize: '1.15rem' }}
                             onClick={() => navigate('/dashboard')}
                         >
                             View Live Demo
@@ -80,17 +71,7 @@ const LandingPage = () => {
             {/* About Section */}
             <section id="about" style={{ padding: '8rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
                 <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-                    <span style={{
-                        background: 'rgba(59, 130, 246, 0.1)',
-                        color: 'var(--accent-primary)',
-                        padding: '6px 16px',
-                        borderRadius: '50px',
-                        fontSize: '0.9rem',
-                        fontWeight: '600',
-                        border: '1px solid rgba(59, 130, 246, 0.2)',
-                        display: 'inline-block',
-                        marginBottom: '1rem'
-                    }}>
+                    <span className="premium-pill" style={{ marginBottom: '1rem' }}>
                         About DisasterSync
                     </span>
                     <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', fontWeight: '700' }}>
@@ -211,24 +192,14 @@ const LandingPage = () => {
             </section>
 
             {/* Impact Section */}
-            <section id="impact" style={{ padding: '6rem 0', background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(59, 130, 246, 0.05) 100%)' }}>
+            <section id="impact" style={{ padding: '6rem 0' }}>
                 <div style={{
                     padding: '0 2rem',
                     maxWidth: '1200px',
                     margin: '0 auto'
                 }}>
                     <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-                        <span style={{
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            color: 'var(--accent-danger)',
-                            padding: '6px 16px',
-                            borderRadius: '50px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                            display: 'inline-block',
-                            marginBottom: '1rem'
-                        }}>
+                        <span className="premium-pill-danger" style={{ marginBottom: '1rem' }}>
                             Real Impact Metrics
                         </span>
                         <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>
@@ -242,7 +213,7 @@ const LandingPage = () => {
                             maxWidth: '900px',
                             margin: '0 auto 3rem'
                         }}>
-                            Current disaster management in India is reactive, fragmented, and deadly. By the time agencies coordinate, 
+                            Current disaster management in India is reactive, fragmented, and deadly. By the time agencies coordinate,
                             by the time alerts go out, by the time resources arrive—it's often too late. <strong>DisasterSync transforms this entirely.</strong>
                         </p>
                     </div>
@@ -250,9 +221,9 @@ const LandingPage = () => {
                     {/* Key Metrics Grid */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                         gap: '2rem',
-                        marginBottom: '4rem'
+                        marginBottom: '5rem'
                     }}>
                         <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))' }}>
                             <div className="stat-number" style={{ color: 'var(--accent-danger)', fontSize: '3.5rem' }}>2 Hrs</div>
@@ -339,6 +310,9 @@ const LandingPage = () => {
             {/* Features Grid */}
             <section id="features" style={{ padding: '8rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
                 <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+                    <span className="premium-pill" style={{ marginBottom: '1rem' }}>
+                        Powerful Features
+                    </span>
                     <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Why DisasterSync?</h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Replacing reactive chaos with proactive precision.</p>
                 </div>
