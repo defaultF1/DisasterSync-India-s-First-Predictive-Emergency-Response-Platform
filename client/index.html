@@ -18,20 +18,43 @@
     rel="stylesheet">
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
   <script>
+    // Improved error handler that ignores CORS/script errors without meaningful information
     window.onerror = function (msg, url, line, col, error) {
-      var div = document.createElement('div');
-      div.style.cssText = 'position:fixed; top:0; left:0; right:0; background:rgba(255,0,0,0.9); color:white; padding:20px; z-index:99999; font-family:monospace; white-space:pre-wrap; font-size:16px;';
-      div.innerHTML = '🛑 <b>CRITICAL ERROR:</b><br>' + msg + '<br><br>Source: ' + url + ':' + line + ':' + col + '<br><br>' + (error && error.stack ? error.stack : '');
-      document.body.appendChild(div);
+      // Ignore generic "Script error" with no location info (CORS/external script errors)
+      if (msg === 'Script error.' && (!url || url === '' || (line === 0 && col === 0))) {
+        console.warn('Ignoring cross-origin script error (likely from external CDN)');
+        return true; // Suppress error
+      }
+
+      // Only show errors with actual information in development
+      if (import.meta.env.DEV && error && error.stack) {
+        var div = document.createElement('div');
+        div.style.cssText = 'position:fixed; top:0; left:0; right:0; background:rgba(255,0,0,0.9); color:white; padding:20px; z-index:99999; font-family:monospace; white-space:pre-wrap; font-size:14px; max-height:50vh; overflow:auto;';
+        div.innerHTML = '🛑 <b>ERROR:</b><br>' + msg + '<br><br>Source: ' + url + ':' + line + ':' + col + '<br><br>' + (error.stack || '');
+        document.body.appendChild(div);
+      } else {
+        // In production, just log it
+        console.error('Error:', msg, 'at', url, line + ':' + col);
+      }
       return false;
     };
+
+    // Handle unhandled promise rejections more gracefully
     window.addEventListener('unhandledrejection', function (event) {
-      var div = document.createElement('div');
-      div.style.cssText = 'position:fixed; top:50%; left:0; right:0; background:rgba(255,100,0,0.9); color:white; padding:20px; z-index:99999; font-family:monospace; white-space:pre-wrap; font-size:16px;';
-      div.innerHTML = '⚠️ <b>UNHANDLED PROMISE:</b><br>' + event.reason;
-      document.body.appendChild(div);
+      console.error('Unhandled promise rejection:', event.reason);
+
+      // Only show in development mode
+      if (import.meta.env.DEV) {
+        var div = document.createElement('div');
+        div.style.cssText = 'position:fixed; bottom:0; left:0; right:0; background:rgba(255,100,0,0.9); color:white; padding:20px; z-index:99999; font-family:monospace; white-space:pre-wrap; font-size:14px;';
+        div.innerHTML = '⚠️ <b>UNHANDLED PROMISE:</b><br>' + (event.reason ? event.reason.toString() : 'Unknown error');
+        document.body.appendChild(div);
+      }
     });
   </script>
 </head>
