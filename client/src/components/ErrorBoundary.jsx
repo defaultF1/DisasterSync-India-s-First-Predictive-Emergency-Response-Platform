@@ -42,32 +42,32 @@ class ErrorBoundary extends React.Component {
             <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
               We're sorry for the inconvenience. Please try refreshing the page.
             </p>
-            {import.meta.env.DEV && (
-              <>
-                <div style={{
-                  color: '#ef4444',
-                  backgroundColor: 'rgba(0,0,0,0.2)',
-                  padding: '1rem',
-                  borderRadius: '8px',
-                  marginBottom: '1rem',
-                  textAlign: 'left'
-                }}>
-                  {this.state.error && this.state.error.toString()}
-                </div>
-                <details style={{ marginTop: '1rem', textAlign: 'left' }}>
-                  <summary style={{ cursor: 'pointer', marginBottom: '0.5rem' }}>Stack Trace</summary>
-                  <pre style={{
-                    background: '#000',
-                    padding: '1rem',
-                    overflow: 'auto',
-                    borderRadius: '8px',
-                    fontSize: '0.75rem'
-                  }}>
-                    {this.state.errorInfo && this.state.errorInfo.componentStack}
-                  </pre>
-                </details>
-              </>
-            )}
+            {/* ALWAYS SHOW ERROR DETAILS FOR DEBUGGING */}
+            <div style={{
+              color: '#ef4444',
+              backgroundColor: 'rgba(255,0,0,0.1)',
+              padding: '1rem',
+              borderRadius: '8px',
+              marginBottom: '1rem',
+              textAlign: 'left',
+              border: '1px solid rgba(255,0,0,0.2)'
+            }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Debug Info:</p>
+              {this.state.error && this.state.error.toString()}
+            </div>
+            <details style={{ marginTop: '1rem', textAlign: 'left' }}>
+              <summary style={{ cursor: 'pointer', marginBottom: '0.5rem', color: '#64748b' }}>Technical Stack Trace</summary>
+              <pre style={{
+                background: '#000',
+                padding: '1rem',
+                overflow: 'auto',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                maxHeight: '300px'
+              }}>
+                {this.state.errorInfo && this.state.errorInfo.componentStack}
+              </pre>
+            </details>
             <button
               onClick={() => window.location.reload()}
               style={{
