@@ -358,7 +358,7 @@ const LandingPage = () => {
                     <Activity color="var(--accent-primary)" size={24} />
                     <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem' }}>DisasterSync</span>
                 </div>
-                <p>&copy; 2025 DisasterSync. Built for India with ❤️.</p>
+                <p>&copy; 2026 DisasterSync. Built for India with ❤️.</p>
             </footer>
 
         </div>
