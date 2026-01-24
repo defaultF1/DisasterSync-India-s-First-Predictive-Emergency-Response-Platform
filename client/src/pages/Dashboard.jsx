@@ -156,7 +156,9 @@ const Dashboard = () => {
 
     const totalResources = resources.length;
     const availableResources = resources.filter(r => r.status === 'Available').length;
-    const populationAtRisk = prediction ? parseInt(prediction.impactEstimate.split(',')[0].replace(/[^0-9]/g, '')) : 0;
+    const populationAtRisk = (prediction && prediction.impactEstimate)
+        ? parseInt(prediction.impactEstimate.split(',')[0].replace(/[^0-9]/g, '') || '0')
+        : 0;
 
     return (
         <div className="dashboard-grid">
@@ -291,23 +293,23 @@ const Dashboard = () => {
                             >
                                 {activeAlert ? '✅ Protocols Activated' : '📢 Broadcast Evacuation Alert'}
                             </button>
-                            
+
                             <button
                                 className="btn btn-primary full-width"
                                 style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-color)', marginTop: '0.5rem' }}
                                 onClick={async () => {
                                     if (!prediction) return;
-                                    
+
                                     // Find first available resource
                                     const availableResource = resources.find(r => r.status === 'Available');
-                                    
+
                                     if (!availableResource) {
                                         toast.warning("No resources currently available for dispatch.");
                                         return;
                                     }
 
                                     toast.info(`🚁 Dispatching ${availableResource.type} to ${prediction.region}...`);
-                                    
+
                                     try {
                                         await fetch(`${API_URL}/api/resources/${availableResource.id}/dispatch`, {
                                             method: 'POST',

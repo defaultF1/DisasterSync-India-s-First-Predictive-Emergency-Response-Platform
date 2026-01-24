@@ -80,13 +80,13 @@ function DashboardLayout() {
   );
 }
 
-import { FirebaseProvider } from './contexts/FirebaseContext';
+// import { FirebaseProvider } from './contexts/FirebaseContext';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <FirebaseProvider>
+        <WebSocketProvider>
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
@@ -100,7 +100,7 @@ function App() {
             />
           </Routes>
           <ToastContainer position="bottom-right" autoClose={3000} theme="dark" />
-        </FirebaseProvider>
+        </WebSocketProvider>
       </AuthProvider>
     </Router>
   );

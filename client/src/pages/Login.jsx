@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, User, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { API_URL } from '../utils/apiConfig';
@@ -8,14 +8,23 @@ import { useAuth } from '../contexts/AuthContext';
 // Force refresh
 
 const Login = () => {
-    const { login } = useAuth();
+    const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [credentials, setCredentials] = useState({
         email: 'admin@ndrf.in',
         password: 'admin123'
     });
+
+    // Reactive navigation based on auth state
+    useEffect(() => {
+        if (isAuthenticated) {
+            const origin = location.state?.from?.pathname || '/dashboard';
+            navigate(origin, { replace: true });
+        }
+    }, [isAuthenticated, navigate, location]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -25,12 +34,11 @@ const Login = () => {
         try {
             await login(credentials.email, credentials.password);
             toast.success('Welcome back!');
-            navigate('/dashboard');
+            // Navigation handled by useEffect
         } catch (err) {
             console.error(err);
             setError('Failed to log in. Please check credentials.');
             toast.error('Authentication failed');
-        } finally {
             setLoading(false);
         }
     };
